@@ -30,6 +30,22 @@ import {
   Link2,
   Minus,
   Copy,
+  Compass,
+  Menu,
+  X,
+  ChevronLeft,
+  ChevronRight,
+  Info,
+  AlertTriangle,
+  XCircle,
+  CheckCircle,
+  TrendingUp,
+  Percent,
+  SlidersHorizontal,
+  ToggleRight,
+  Images,
+  Layers,
+  CircleDot,
 } from 'lucide-react';
 
 const iconCatalog: Record<string, React.ComponentType<{ className?: string; style?: React.CSSProperties }>> = {
@@ -51,7 +67,31 @@ const iconCatalog: Record<string, React.ComponentType<{ className?: string; styl
   Volume2,
   Link2,
   Minus,
+  Compass,
+  TrendingUp,
+  Percent,
+  Youtube: Play,
+  Images,
+  Layers,
+  AlertCircle: AlertTriangle,
 };
+
+function getEmbedUrl(url: string): string {
+  if (!url) return 'https://www.youtube-nocookie.com/embed/dQw4w9WgXcQ';
+  if (url.includes('youtube.com/watch?v=')) {
+    const videoId = url.split('v=')[1]?.split('&')[0];
+    return `https://www.youtube-nocookie.com/embed/${videoId}`;
+  }
+  if (url.includes('youtu.be/')) {
+    const videoId = url.split('youtu.be/')[1]?.split('?')[0];
+    return `https://www.youtube-nocookie.com/embed/${videoId}`;
+  }
+  if (url.includes('vimeo.com/')) {
+    const videoId = url.split('vimeo.com/')[1]?.split('?')[0];
+    return `https://player.vimeo.com/video/${videoId}`;
+  }
+  return url;
+}
 
 interface ElementRendererProps {
   element: Element;
@@ -130,9 +170,42 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
     ...(viewportMode === 'mobile' ? styleMobile : {}),
   };
 
+  // Normalisation de l'image de fond si une URL simple est fournie
+  if (effectiveStyle.backgroundImage && typeof effectiveStyle.backgroundImage === 'string') {
+    const bgVal = effectiveStyle.backgroundImage.trim();
+    if (
+      bgVal &&
+      !bgVal.startsWith('url(') &&
+      !bgVal.startsWith('linear-gradient') &&
+      !bgVal.startsWith('radial-gradient') &&
+      bgVal !== 'none'
+    ) {
+      effectiveStyle.backgroundImage = `url('${bgVal}')`;
+    }
+  }
+
+  // Éviter le mélange des propriétés raccourcies (flex) et détaillées (flexGrow/flexShrink/flexBasis)
+  if (effectiveStyle.flex !== undefined && effectiveStyle.flex !== '') {
+    delete (effectiveStyle as any).flexGrow;
+    delete (effectiveStyle as any).flexShrink;
+    delete (effectiveStyle as any).flexBasis;
+  } else {
+    delete (effectiveStyle as any).flex;
+  }
+
   const isAbsolute = effectiveStyle.position === 'absolute';
 
-  // Gestion du redimensionnement interactif via les 8 poignées
+  // Style nettoyé des coordonnées absolues pour le rendu interne (évite le double décalage)
+  const innerStyle: React.CSSProperties = {
+    ...effectiveStyle,
+    position: undefined,
+    left: undefined,
+    top: undefined,
+    zIndex: undefined,
+    margin: isAbsolute ? 0 : effectiveStyle.margin,
+  };
+
+  // Gestion du redimensionnement interactif ultra-fluide avec aimantation et limites strictes
   const handleResizeStart = (direction: 'n' | 's' | 'e' | 'w' | 'ne' | 'nw' | 'se' | 'sw', e: React.MouseEvent) => {
     e.stopPropagation();
     e.preventDefault();
@@ -141,26 +214,36 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
     const elNode = wrapperRef.current;
     if (!elNode) return;
 
-    const rect = elNode.getBoundingClientRect();
+    const elRect = elNode.getBoundingClientRect();
     const startX = e.clientX;
     const startY = e.clientY;
     const currentZoom = zoom || 1;
-    const startWidth = Math.round(rect.width / currentZoom);
-    const startHeight = Math.round(rect.height / currentZoom);
+    const startWidth = Math.round(elRect.width / currentZoom);
+    const startHeight = Math.round(elRect.height / currentZoom);
 
     const parentNode = elNode.parentElement;
-    const parentRect = parentNode?.getBoundingClientRect() || { left: 0, top: 0 };
+    const parentRect = parentNode?.getBoundingClientRect() || {
+      left: 0,
+      top: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
+    const parentWidth = Math.max(50, Math.round(parentRect.width / currentZoom));
+    const parentHeight = Math.max(50, Math.round(parentRect.height / currentZoom));
+
     const startLeft = typeof effectiveStyle.left === 'number'
       ? effectiveStyle.left
-      : parseInt(String(effectiveStyle.left || ''), 10) || Math.round((rect.left - parentRect.left) / currentZoom);
+      : parseInt(String(effectiveStyle.left || ''), 10) || Math.max(0, Math.round((elRect.left - parentRect.left) / currentZoom));
     const startTop = typeof effectiveStyle.top === 'number'
       ? effectiveStyle.top
-      : parseInt(String(effectiveStyle.top || ''), 10) || Math.round((rect.top - parentRect.top) / currentZoom);
+      : parseInt(String(effectiveStyle.top || ''), 10) || Math.max(0, Math.round((elRect.top - parentRect.top) / currentZoom));
 
     let finalW = startWidth;
     let finalH = startHeight;
     let finalL = startLeft;
     let finalT = startTop;
+
+    const SNAP_THRESHOLD = 6;
 
     const onMouseMove = (moveEvt: MouseEvent) => {
       moveEvt.preventDefault();
@@ -172,23 +255,38 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
       let l = startLeft;
       let t = startTop;
 
+      // 1. Est (Bord droit)
       if (direction.includes('e')) {
-        w = Math.max(28, Math.round(startWidth + dx));
+        const maxW = Math.max(20, parentWidth - startLeft);
+        let targetW = Math.round(startWidth + dx);
+        if (Math.abs(targetW - maxW) < SNAP_THRESHOLD) targetW = maxW;
+        w = Math.max(20, Math.min(targetW, maxW));
       }
+
+      // 2. Ouest (Bord gauche)
       if (direction.includes('w')) {
-        w = Math.max(28, Math.round(startWidth - dx));
-        if (isAbsolute) {
-          l = Math.round(startLeft + (startWidth - w));
-        }
+        const maxW = Math.max(20, startLeft + startWidth);
+        let targetW = Math.round(startWidth - dx);
+        if (Math.abs(targetW - maxW) < SNAP_THRESHOLD) targetW = maxW;
+        w = Math.max(20, Math.min(targetW, maxW));
+        l = Math.max(0, Math.min(startLeft + (startWidth - w), parentWidth - w));
       }
+
+      // 3. Sud (Bord bas)
       if (direction.includes('s')) {
-        h = Math.max(20, Math.round(startHeight + dy));
+        const maxH = Math.max(20, parentHeight - startTop);
+        let targetH = Math.round(startHeight + dy);
+        if (Math.abs(targetH - maxH) < SNAP_THRESHOLD) targetH = maxH;
+        h = Math.max(20, Math.min(targetH, maxH));
       }
+
+      // 4. Nord (Bord haut)
       if (direction.includes('n')) {
-        h = Math.max(20, Math.round(startHeight - dy));
-        if (isAbsolute) {
-          t = Math.round(startTop + (startHeight - h));
-        }
+        const maxH = Math.max(20, startTop + startHeight);
+        let targetH = Math.round(startHeight - dy);
+        if (Math.abs(targetH - maxH) < SNAP_THRESHOLD) targetH = maxH;
+        h = Math.max(20, Math.min(targetH, maxH));
+        t = Math.max(0, Math.min(startTop + (startHeight - h), parentHeight - h));
       }
 
       finalW = w;
@@ -200,10 +298,10 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
       if (elNode) {
         elNode.style.width = `${w}px`;
         elNode.style.height = `${h}px`;
-        if (isAbsolute && direction.includes('w')) {
+        if (direction.includes('w')) {
           elNode.style.left = `${l}px`;
         }
-        if (isAbsolute && direction.includes('n')) {
+        if (direction.includes('n')) {
           elNode.style.top = `${t}px`;
         }
       }
@@ -219,7 +317,8 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
         width: `${finalW}px`,
         height: `${finalH}px`,
       };
-      if (isAbsolute) {
+      if (isAbsolute || direction.includes('w') || direction.includes('n')) {
+        updates.position = 'absolute';
         if (direction.includes('w')) updates.left = `${finalL}px`;
         if (direction.includes('n')) updates.top = `${finalT}px`;
       }
@@ -230,19 +329,28 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
     window.addEventListener('mouseup', onMouseUp);
   };
 
-  // Déplacement libre à la souris (style Canva / Figma)
+  // Déplacement libre à la souris (style Canva / Figma) ultra-fluide avec aimantation et limites strictes
   const handleFreeMoveStart = (e: React.MouseEvent) => {
     e.stopPropagation();
-    e.preventDefault();
-    if (element.locked) return;
+    if (element.locked || isEditing) return;
 
     const elNode = wrapperRef.current;
     if (!elNode) return;
 
-    const rect = elNode.getBoundingClientRect();
     const parentNode = elNode.parentElement;
-    const parentRect = parentNode?.getBoundingClientRect() || { left: 0, top: 0 };
+    const parentRect = parentNode?.getBoundingClientRect() || {
+      left: 0,
+      top: 0,
+      width: window.innerWidth,
+      height: window.innerHeight,
+    };
     const currentZoom = zoom || 1;
+
+    const parentWidth = Math.max(50, Math.round(parentRect.width / currentZoom));
+    const parentHeight = Math.max(50, Math.round(parentRect.height / currentZoom));
+    const elRect = elNode.getBoundingClientRect();
+    const elemWidth = Math.round(elRect.width / currentZoom);
+    const elemHeight = Math.round(elRect.height / currentZoom);
 
     const startMouseX = e.clientX;
     const startMouseY = e.clientY;
@@ -251,31 +359,89 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
       ? effectiveStyle.left
       : isAbsolute && typeof effectiveStyle.left === 'string' && !isNaN(parseInt(effectiveStyle.left, 10))
       ? parseInt(effectiveStyle.left, 10)
-      : Math.max(0, Math.round((rect.left - parentRect.left) / currentZoom));
+      : Math.max(0, Math.round((elRect.left - parentRect.left) / currentZoom));
 
     const startTop = isAbsolute && typeof effectiveStyle.top === 'number'
       ? effectiveStyle.top
       : isAbsolute && typeof effectiveStyle.top === 'string' && !isNaN(parseInt(effectiveStyle.top, 10))
       ? parseInt(effectiveStyle.top, 10)
-      : Math.max(0, Math.round((rect.top - parentRect.top) / currentZoom));
+      : Math.max(0, Math.round((elRect.top - parentRect.top) / currentZoom));
+
+    const maxLeft = Math.max(0, parentWidth - elemWidth);
+    const maxTop = Math.max(0, parentHeight - elemHeight);
 
     let finalLeft = startLeft;
     let finalTop = startTop;
+    let hasMoved = false;
+
+    const SNAP_THRESHOLD = 8;
+    const parentCenterX = parentWidth / 2;
+    const parentCenterY = parentHeight / 2;
 
     const onMouseMove = (moveEvt: MouseEvent) => {
-      moveEvt.preventDefault();
       const dx = (moveEvt.clientX - startMouseX) / currentZoom;
       const dy = (moveEvt.clientY - startMouseY) / currentZoom;
 
-      finalLeft = Math.round(startLeft + dx);
-      finalTop = Math.round(startTop + dy);
+      // Seuil de déclenchement (4px) pour éviter le déplacement involontaire lors d'un clic
+      if (!hasMoved) {
+        if (Math.hypot(moveEvt.clientX - startMouseX, moveEvt.clientY - startMouseY) < 4) {
+          return;
+        }
+        hasMoved = true;
+      }
 
-      setMovingInfo({ x: finalLeft, y: finalTop });
+      moveEvt.preventDefault();
+
+      let rawLeft = Math.round(startLeft + dx);
+      let rawTop = Math.round(startTop + dy);
+
+      let isCenteredX = false;
+      let isCenteredY = false;
+
+      // Aimantation au centre horizontal de la page
+      const elemCenterX = rawLeft + elemWidth / 2;
+      if (Math.abs(elemCenterX - parentCenterX) < SNAP_THRESHOLD) {
+        rawLeft = Math.round(parentCenterX - elemWidth / 2);
+        isCenteredX = true;
+      } else if (Math.abs(rawLeft) < SNAP_THRESHOLD) {
+        rawLeft = 0;
+      } else if (Math.abs(rawLeft - maxLeft) < SNAP_THRESHOLD) {
+        rawLeft = maxLeft;
+      }
+
+      // Aimantation au centre vertical de la page
+      const elemCenterY = rawTop + elemHeight / 2;
+      if (Math.abs(elemCenterY - parentCenterY) < SNAP_THRESHOLD) {
+        rawTop = Math.round(parentCenterY - elemHeight / 2);
+        isCenteredY = true;
+      } else if (Math.abs(rawTop) < SNAP_THRESHOLD) {
+        rawTop = 0;
+      } else if (Math.abs(rawTop - maxTop) < SNAP_THRESHOLD) {
+        rawTop = maxTop;
+      }
+
+      // Limites strictes : l'élément reste 100% à l'intérieur du canevas
+      finalLeft = Math.max(0, Math.min(rawLeft, maxLeft));
+      finalTop = Math.max(0, Math.min(rawTop, maxTop));
+
+      const isHittingBoundary =
+        finalLeft === 0 || finalLeft === maxLeft || finalTop === 0 || finalTop === maxTop;
+
+      setMovingInfo({
+        x: finalLeft,
+        y: finalTop,
+        isAtBoundary: isHittingBoundary,
+        isCenteredX,
+        isCenteredY,
+      } as any);
 
       if (elNode) {
         elNode.style.position = 'absolute';
         elNode.style.left = `${finalLeft}px`;
         elNode.style.top = `${finalTop}px`;
+        if (element.type === 'heading' || element.type === 'text') {
+          elNode.style.width = effectiveStyle.width ? String(effectiveStyle.width) : `${elemWidth}px`;
+        }
         elNode.style.zIndex = '40';
       }
     };
@@ -285,6 +451,8 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
       window.removeEventListener('mouseup', onMouseUp);
       setMovingInfo(null);
 
+      if (!hasMoved) return;
+
       pushSnapshot();
       updateElementStyle(
         element.id,
@@ -292,6 +460,7 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
           position: 'absolute',
           left: `${finalLeft}px`,
           top: `${finalTop}px`,
+          width: effectiveStyle.width || (['heading', 'text'].includes(element.type) ? `${elemWidth}px` : undefined),
           zIndex: effectiveStyle.zIndex || 10,
         },
         viewportMode
@@ -301,6 +470,56 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
     window.addEventListener('mousemove', onMouseMove);
     window.addEventListener('mouseup', onMouseUp);
   };
+
+  // Déplacement au clavier avec les flèches (← → ↑ ↓) pour l'élément sélectionné
+  React.useEffect(() => {
+    if (!isPrimarySelected || element.locked || !isAbsolute) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) return;
+      if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
+
+      e.preventDefault();
+      const elNode = wrapperRef.current;
+      if (!elNode) return;
+
+      const parentNode = elNode.parentElement;
+      const parentRect = parentNode?.getBoundingClientRect() || {
+        width: window.innerWidth,
+        height: window.innerHeight,
+      };
+      const currentZoom = zoom || 1;
+      const parentWidth = Math.max(100, Math.round(parentRect.width / currentZoom));
+      const parentHeight = Math.max(100, Math.round(parentRect.height / currentZoom));
+      const elRect = elNode.getBoundingClientRect();
+      const elemWidth = Math.round(elRect.width / currentZoom);
+      const elemHeight = Math.round(elRect.height / currentZoom);
+
+      const currentLeft = typeof effectiveStyle.left === 'number'
+        ? effectiveStyle.left
+        : parseInt(String(effectiveStyle.left || '0'), 10) || 0;
+      const currentTop = typeof effectiveStyle.top === 'number'
+        ? effectiveStyle.top
+        : parseInt(String(effectiveStyle.top || '0'), 10) || 0;
+
+      const maxLeft = Math.max(0, parentWidth - elemWidth);
+      const maxTop = Math.max(0, parentHeight - elemHeight);
+      const step = e.shiftKey ? 10 : 1;
+
+      let newLeft = currentLeft;
+      let newTop = currentTop;
+
+      if (e.key === 'ArrowLeft') newLeft = Math.max(0, currentLeft - step);
+      if (e.key === 'ArrowRight') newLeft = Math.min(maxLeft, currentLeft + step);
+      if (e.key === 'ArrowUp') newTop = Math.max(0, currentTop - step);
+      if (e.key === 'ArrowDown') newTop = Math.min(maxTop, currentTop + step);
+
+      updateElementStyle(element.id, { position: 'absolute', left: `${newLeft}px`, top: `${newTop}px` }, viewportMode);
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isPrimarySelected, element.locked, isAbsolute, effectiveStyle.left, effectiveStyle.top, zoom, viewportMode]);
 
   // Récupération de la traduction i18n dynamique
   const i18nConfig = project.i18n;
@@ -457,13 +676,21 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
                 if (e.key === 'Enter' || e.key === 'Escape') setInlineEditingId(null);
               }}
               autoFocus
-              className="w-full bg-white/80 dark:bg-[#181824]/80 p-1 border-2 border-[#5B5BF0] rounded-md outline-none"
-              style={effectiveStyle}
+              className="w-full bg-white/80 dark:bg-[#181824]/80 p-1 border-2 border-[#5B5BF0] rounded-md outline-none font-bold"
+              style={innerStyle}
             />
           );
         }
         return (
-          <Tag style={effectiveStyle} className={`outline-none ${getAnimationClass()}`}>
+          <Tag
+            onMouseDown={!element.locked && !isEditing ? handleFreeMoveStart : undefined}
+            style={{
+              cursor: isPrimarySelected ? 'grab' : 'pointer',
+              userSelect: 'none',
+              ...innerStyle,
+            }}
+            className={`outline-none hover:opacity-95 transition-all ${getAnimationClass()}`}
+          >
             {getTranslatedProp('props.text', getTranslatedProp('content', element.props?.text || 'Titre de niveau'))}
           </Tag>
         );
@@ -484,12 +711,20 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
               autoFocus
               rows={3}
               className="w-full bg-white/80 dark:bg-[#181824]/80 p-1 border-2 border-[#5B5BF0] rounded-md outline-none resize-y"
-              style={effectiveStyle}
+              style={innerStyle}
             />
           );
         }
         return (
-          <TextTag style={effectiveStyle} className={`whitespace-pre-wrap outline-none ${getAnimationClass()}`}>
+          <TextTag
+            onMouseDown={!element.locked && !isEditing ? handleFreeMoveStart : undefined}
+            style={{
+              cursor: isPrimarySelected ? 'grab' : 'pointer',
+              userSelect: 'none',
+              ...innerStyle,
+            }}
+            className={`whitespace-pre-wrap outline-none hover:opacity-95 transition-all ${getAnimationClass()}`}
+          >
             {getTranslatedProp('props.text', getTranslatedProp('content', element.props?.text || 'Votre texte explicatif ici…'))}
           </TextTag>
         );
@@ -926,6 +1161,454 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
         );
       }
 
+      // === BARRE DE NAVIGATION (<nav>) ===
+      case 'navbar': {
+        const links: Array<{ label: string; href: string }> = element.props?.links || [
+          { label: 'Accueil', href: '#' },
+          { label: 'Services', href: '#services' },
+          { label: 'Tarifs', href: '#tarifs' },
+          { label: 'Contact', href: '#contact' },
+        ];
+        const isMobileView = viewportMode === 'mobile';
+
+        return (
+          <nav
+            style={effectiveStyle}
+            className={`select-none transition-all ${getAnimationClass()}`}
+          >
+            {/* Logo / Marque */}
+            <div className="flex items-center gap-2.5 font-extrabold text-sm sm:text-base text-[#1B1B2F] dark:text-[#F4F4F9]">
+              {element.props?.brandLogoUrl ? (
+                <img
+                  src={element.props.brandLogoUrl}
+                  alt={element.props?.brandText || 'Logo'}
+                  className="h-7 w-auto object-contain"
+                />
+              ) : (
+                <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-[#5B5BF0] to-[#8B5CF6] text-white flex items-center justify-center shadow-xs">
+                  <Compass className="w-4 h-4" />
+                </div>
+              )}
+              <span className="tracking-tight">
+                {element.props?.brandText || 'Studio App'}
+              </span>
+            </div>
+
+            {/* Liens de navigation (Mode Grand Écran) */}
+            {!isMobileView && (
+              <div className="hidden md:flex items-center gap-6 text-xs font-semibold text-[#62627A] dark:text-[#A5A5BC]">
+                {links.map((lnk, idx) => (
+                  <a
+                    key={idx}
+                    href={lnk.href || '#'}
+                    onClick={(e) => e.preventDefault()}
+                    className="hover:text-[#5B5BF0] dark:hover:text-[#7D7DF8] transition-colors"
+                  >
+                    {lnk.label}
+                  </a>
+                ))}
+              </div>
+            )}
+
+            {/* Bouton CTA ou Menu Hamburger */}
+            <div className="flex items-center gap-3">
+              {element.props?.ctaLabel && !isMobileView && (
+                <a
+                  href={element.props?.ctaHref || '#'}
+                  onClick={(e) => e.preventDefault()}
+                  className="px-4 py-2 rounded-xl bg-[#5B5BF0] hover:bg-[#4747E2] text-white text-xs font-bold shadow-xs transition-colors"
+                >
+                  {element.props.ctaLabel}
+                </a>
+              )}
+              {isMobileView && (
+                <button
+                  type="button"
+                  className="p-2 rounded-lg bg-black/5 dark:bg-white/5 text-[#1B1B2F] dark:text-[#F4F4F9]"
+                  title="Menu mobile"
+                >
+                  <Menu className="w-4 h-4" />
+                </button>
+              )}
+            </div>
+          </nav>
+        );
+      }
+
+      // === ONGLETS INTERACTIFS (Tabs Switcher) ===
+      case 'tabs': {
+        const tabsList: Array<{ title: string; content: string }> = element.props?.tabs || [
+          { title: 'Onglet 1', content: 'Contenu du premier volet.' },
+          { title: 'Onglet 2', content: 'Contenu du deuxième volet.' },
+        ];
+        const activeIdx = Math.min(element.props?.activeIndex || 0, Math.max(0, tabsList.length - 1));
+
+        return (
+          <div style={effectiveStyle} className={`flex flex-col gap-4 ${getAnimationClass()}`}>
+            {/* Barre des onglets */}
+            <div className="flex border-b border-[#E6E6EE] dark:border-[#28283C] gap-2 overflow-x-auto">
+              {tabsList.map((tItem, tIdx) => (
+                <button
+                  key={tIdx}
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    updateElementProps(element.id, { activeIndex: tIdx });
+                  }}
+                  className={`px-4 py-2.5 text-xs font-bold border-b-2 transition-all whitespace-nowrap ${
+                    activeIdx === tIdx
+                      ? 'border-[#5B5BF0] text-[#5B5BF0] dark:text-[#7D7DF8]'
+                      : 'border-transparent text-[#8E8EA6] hover:text-[#1B1B2F] dark:hover:text-white'
+                  }`}
+                >
+                  {tItem.title || `Onglet ${tIdx + 1}`}
+                </button>
+              ))}
+            </div>
+
+            {/* Contenu de l'onglet actif */}
+            <div className="text-xs text-[#62627A] dark:text-[#A5A5BC] leading-relaxed p-1">
+              {tabsList[activeIdx]?.content || 'Contenu sélectionné.'}
+            </div>
+          </div>
+        );
+      }
+
+      // === ÉTOILES DE NOTATION / AVIS (Rating) ===
+      case 'rating': {
+        const score = Number(element.props?.score ?? 5);
+        const maxScore = Number(element.props?.maxScore ?? 5);
+
+        return (
+          <div style={effectiveStyle} className={`select-none ${getAnimationClass()}`}>
+            <div className="flex items-center gap-1 text-amber-400">
+              {Array.from({ length: maxScore }).map((_, i) => (
+                <Star
+                  key={i}
+                  className={`w-4 h-4 ${
+                    i < score ? 'fill-amber-400 text-amber-400' : 'text-gray-300 dark:text-gray-600'
+                  }`}
+                />
+              ))}
+            </div>
+            {element.props?.showNumber && (
+              <span className="text-xs font-bold text-[#1B1B2F] dark:text-[#F4F4F9] ml-2">
+                {score.toFixed(1)} / {maxScore}
+              </span>
+            )}
+            {element.props?.reviewCount && (
+              <span className="text-[11px] text-[#8E8EA6] dark:text-[#75758E] ml-1.5">
+                ({element.props.reviewCount})
+              </span>
+            )}
+          </div>
+        );
+      }
+
+      // === CHIFFRE CLÉ / STATISTIQUE (KPI) ===
+      case 'stat_kpi': {
+        const IconComp = element.props?.iconName ? iconCatalog[element.props.iconName] || Zap : Zap;
+
+        return (
+          <div style={effectiveStyle} className={`flex flex-col gap-2 ${getAnimationClass()}`}>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-bold text-[#8E8EA6] dark:text-[#75758E] uppercase tracking-wider">
+                {element.props?.label || 'Indicateur Clé'}
+              </span>
+              <div className="w-8 h-8 rounded-xl bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#282846] dark:text-[#7D7DF8] flex items-center justify-center">
+                <IconComp className="w-4 h-4" />
+              </div>
+            </div>
+            <div className="text-3xl font-extrabold text-[#1B1B2F] dark:text-[#F4F4F9] tracking-tight">
+              {element.props?.value || '100%'}
+            </div>
+            {element.props?.trend && (
+              <div className="flex items-center gap-1 text-xs font-bold text-emerald-600 dark:text-emerald-400">
+                <TrendingUp className="w-3.5 h-3.5" />
+                <span>{element.props.trend}</span>
+              </div>
+            )}
+          </div>
+        );
+      }
+
+      // === ALERTE / CALLOUT (<aside>) ===
+      case 'alert': {
+        const variant = element.props?.variant || 'info';
+        const stylesByVariant: Record<string, { bg: string; border: string; text: string; icon: React.ReactNode }> = {
+          info: {
+            bg: 'bg-indigo-50 dark:bg-indigo-950/40',
+            border: 'border-indigo-200 dark:border-indigo-900',
+            text: 'text-indigo-900 dark:text-indigo-200',
+            icon: <Info className="w-4 h-4 text-indigo-600 shrink-0" />,
+          },
+          success: {
+            bg: 'bg-emerald-50 dark:bg-emerald-950/40',
+            border: 'border-emerald-200 dark:border-emerald-900',
+            text: 'text-emerald-900 dark:text-emerald-200',
+            icon: <CheckCircle className="w-4 h-4 text-emerald-600 shrink-0" />,
+          },
+          warning: {
+            bg: 'bg-amber-50 dark:bg-amber-950/40',
+            border: 'border-amber-200 dark:border-amber-900',
+            text: 'text-amber-900 dark:text-amber-200',
+            icon: <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />,
+          },
+          error: {
+            bg: 'bg-red-50 dark:bg-red-950/40',
+            border: 'border-red-200 dark:border-red-900',
+            text: 'text-red-900 dark:text-red-200',
+            icon: <XCircle className="w-4 h-4 text-red-600 shrink-0" />,
+          },
+        };
+
+        const currentStyle = stylesByVariant[variant] || stylesByVariant.info;
+
+        return (
+          <aside
+            style={effectiveStyle}
+            className={`p-4 rounded-xl border flex items-start gap-3 ${currentStyle.bg} ${currentStyle.border} ${currentStyle.text} ${getAnimationClass()}`}
+          >
+            {currentStyle.icon}
+            <div className="flex-1 min-w-0">
+              {element.props?.title && (
+                <h4 className="text-xs font-bold mb-0.5">{element.props.title}</h4>
+              )}
+              <p className="text-xs opacity-90 leading-relaxed">{element.props?.message || 'Message informatif'}</p>
+            </div>
+          </aside>
+        );
+      }
+
+      // === VIDÉO EMBED YOUTUBE / VIMEO ===
+      case 'video_embed': {
+        const embedSrc = getEmbedUrl(element.props?.videoUrl || '');
+
+        return (
+          <div style={effectiveStyle} className={`relative overflow-hidden bg-black ${getAnimationClass()}`}>
+            <iframe
+              src={embedSrc}
+              title={element.props?.title || 'Vidéo streaming'}
+              className="w-full h-full border-0 pointer-events-none select-none"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+              allowFullScreen
+            />
+          </div>
+        );
+      }
+
+      // === CARROUSEL / SLIDER D'IMAGES ===
+      case 'carousel': {
+        const images: Array<{ url: string; caption?: string }> = element.props?.images || [
+          { url: 'https://images.unsplash.com/photo-1579546929518-9e396f3cc809?w=800&auto=format&fit=crop&q=80', caption: 'Diapositive 1' },
+          { url: 'https://images.unsplash.com/photo-1497366216548-37526070297c?w=800&auto=format&fit=crop&q=80', caption: 'Diapositive 2' },
+        ];
+        const [currentSlide, setCurrentSlide] = [
+          element.props?.currentSlideIndex || 0,
+          (idx: number) => updateElementProps(element.id, { currentSlideIndex: idx }),
+        ];
+        const activeSlide = images[Math.min(currentSlide, images.length - 1)] || images[0];
+
+        return (
+          <div style={effectiveStyle} className={`relative group overflow-hidden bg-black/90 ${getAnimationClass()}`}>
+            <img
+              src={activeSlide?.url}
+              alt={activeSlide?.caption || 'Carrousel'}
+              className="w-full h-full object-cover transition-opacity duration-300"
+            />
+            {activeSlide?.caption && (
+              <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-black/80 to-transparent text-white text-xs font-semibold">
+                {activeSlide.caption}
+              </div>
+            )}
+            {/* Flèches de navigation */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentSlide((currentSlide - 1 + images.length) % images.length);
+              }}
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <ChevronLeft className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                setCurrentSlide((currentSlide + 1) % images.length);
+              }}
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/80 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+            >
+              <ChevronRight className="w-4 h-4" />
+            </button>
+            {/* Puces indicatrices */}
+            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex items-center gap-1.5">
+              {images.map((_, dotIdx) => (
+                <span
+                  key={dotIdx}
+                  className={`h-1.5 rounded-full transition-all ${
+                    dotIdx === currentSlide ? 'w-5 bg-white' : 'w-1.5 bg-white/40'
+                  }`}
+                />
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      // === ZONE DE TEXTE MULTILIGNE (<textarea>) ===
+      case 'textarea': {
+        return (
+          <div style={effectiveStyle} className={`flex flex-col gap-1 w-full ${getAnimationClass()}`}>
+            {element.props?.label && (
+              <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                {element.props.label}
+              </label>
+            )}
+            <textarea
+              rows={element.props?.rows || 4}
+              placeholder={element.props?.placeholder || 'Saisissez votre message...'}
+              disabled
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-xl text-[#1B1B2F] dark:text-[#F4F4F9] pointer-events-none resize-none"
+            />
+          </div>
+        );
+      }
+
+      // === MENU DÉROULANT (<select><option>) ===
+      case 'select': {
+        const options: string[] = element.props?.options || ['Option 1', 'Option 2', 'Option 3'];
+
+        return (
+          <div style={effectiveStyle} className={`flex flex-col gap-1 w-full ${getAnimationClass()}`}>
+            {element.props?.label && (
+              <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                {element.props.label}
+              </label>
+            )}
+            <select
+              disabled
+              className="w-full px-3 py-2 text-xs bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-xl text-[#1B1B2F] dark:text-[#F4F4F9] pointer-events-none"
+            >
+              {options.map((opt, i) => (
+                <option key={i} value={opt}>
+                  {opt}
+                </option>
+              ))}
+            </select>
+          </div>
+        );
+      }
+
+      // === BOUTONS RADIO (<input type="radio">) ===
+      case 'radio': {
+        const options: string[] = element.props?.options || ['Choix A', 'Choix B'];
+        const currentVal = element.props?.defaultValue || options[0];
+
+        return (
+          <div style={effectiveStyle} className={`flex flex-col gap-2 w-full ${getAnimationClass()}`}>
+            {element.props?.label && (
+              <span className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                {element.props.label}
+              </span>
+            )}
+            <div className="space-y-1.5">
+              {options.map((opt, i) => (
+                <label key={i} className="flex items-center gap-2 text-xs text-[#1B1B2F] dark:text-[#F4F4F9] cursor-pointer">
+                  <input
+                    type="radio"
+                    name={element.props?.name || element.id}
+                    defaultChecked={opt === currentVal}
+                    disabled
+                    className="w-4 h-4 text-[#5B5BF0] pointer-events-none"
+                  />
+                  <span>{opt}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        );
+      }
+
+      // === INTERRUPTEUR / TOGGLE (Switch) ===
+      case 'switch': {
+        const isChecked = element.props?.checked ?? true;
+
+        return (
+          <div style={effectiveStyle} className={`select-none ${getAnimationClass()}`}>
+            <span className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+              {element.props?.label || 'Interrupteur'}
+            </span>
+            <div
+              className={`w-11 h-6 flex items-center rounded-full p-1 cursor-pointer transition-colors ${
+                isChecked ? 'bg-[#5B5BF0]' : 'bg-gray-300 dark:bg-gray-700'
+              }`}
+            >
+              <div
+                className={`bg-white w-4 h-4 rounded-full shadow-md transform transition-transform ${
+                  isChecked ? 'translate-x-5' : 'translate-x-0'
+                }`}
+              />
+            </div>
+          </div>
+        );
+      }
+
+      // === CURSEUR / SLIDER (<input type="range">) ===
+      case 'range': {
+        const val = element.props?.value ?? 50;
+        const min = element.props?.min ?? 0;
+        const max = element.props?.max ?? 100;
+        const unit = element.props?.unit || '';
+
+        return (
+          <div style={effectiveStyle} className={`w-full select-none ${getAnimationClass()}`}>
+            <div className="flex items-center justify-between text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+              <span>{element.props?.label || 'Curseur'}</span>
+              <span className="px-2 py-0.5 rounded-md bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#282846] font-bold">
+                {val} {unit}
+              </span>
+            </div>
+            <input
+              type="range"
+              min={min}
+              max={max}
+              value={val}
+              disabled
+              className="w-full accent-[#5B5BF0] pointer-events-none"
+            />
+          </div>
+        );
+      }
+
+      // === BARRE DE PROGRESSION (<progress>) ===
+      case 'progress_bar': {
+        const val = Number(element.props?.value ?? 60);
+        const max = Number(element.props?.max ?? 100);
+        const percentage = Math.round((val / max) * 100);
+
+        return (
+          <div style={effectiveStyle} className={`w-full select-none ${getAnimationClass()}`}>
+            <div className="flex items-center justify-between text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+              <span>{element.props?.label || 'Progression'}</span>
+              {element.props?.showPercentage !== false && (
+                <span className="font-bold text-[#5B5BF0]">{percentage}%</span>
+              )}
+            </div>
+            <div className="w-full h-2.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+              <div
+                style={{
+                  width: `${percentage}%`,
+                  backgroundColor: element.props?.color || '#5B5BF0',
+                }}
+                className="h-full rounded-full transition-all duration-500"
+              />
+            </div>
+          </div>
+        );
+      }
+
       // === BALISE / BADGE / TAG (<span>) ===
       case 'badge': {
         const IconComponent = element.props?.iconName ? iconCatalog[element.props.iconName] : null;
@@ -966,7 +1649,7 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
   const isDropBefore = dropIndicator?.targetParentId === element.id && dropIndicator?.position === 'before';
   const isDropAfter = dropIndicator?.targetParentId === element.id && dropIndicator?.position === 'after';
 
-  // Style appliqué au conteneur externe englobant
+  // Style appliqué au conteneur externe englobant (inclut les propriétés d'enfant Flex & Grid)
   const wrapperStyle: React.CSSProperties = {
     position: isAbsolute ? 'absolute' : 'relative',
     ...(isAbsolute
@@ -975,7 +1658,21 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
           top: effectiveStyle.top !== undefined ? effectiveStyle.top : 0,
           zIndex: effectiveStyle.zIndex !== undefined ? effectiveStyle.zIndex : 10,
         }
-      : {}),
+      : {
+          margin: effectiveStyle.margin,
+          ...(effectiveStyle.flex !== undefined
+            ? { flex: effectiveStyle.flex }
+            : {
+                flexGrow: effectiveStyle.flexGrow,
+                flexShrink: effectiveStyle.flexShrink,
+                flexBasis: effectiveStyle.flexBasis,
+              }),
+          gridColumn: effectiveStyle.gridColumn,
+          gridRow: effectiveStyle.gridRow,
+          alignSelf: effectiveStyle.alignSelf,
+          justifySelf: effectiveStyle.justifySelf,
+          order: effectiveStyle.order,
+        }),
     width: effectiveStyle.width,
     height: effectiveStyle.height,
     maxWidth: effectiveStyle.maxWidth,
@@ -992,6 +1689,7 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
       onClick={handleClick}
       onDoubleClick={handleDoubleClick}
       onContextMenu={(e) => onContextMenu(e, element.id)}
+      onMouseDown={isPrimarySelected && !element.locked && !isEditing ? handleFreeMoveStart : undefined}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
       className={`group transition-all duration-100 ${
@@ -1038,11 +1736,40 @@ export function ElementRenderer({ element, parent, onContextMenu }: ElementRende
         </div>
       )}
 
+      {/* Guide visuel d'alignement au centre horizontal */}
+      {movingInfo && (movingInfo as any).isCenteredX && (
+        <div className="absolute top-0 bottom-0 left-1/2 w-0.5 border-r-2 border-dashed border-[#5B5BF0] -translate-x-1/2 pointer-events-none z-30 animate-pulse" />
+      )}
+
+      {/* Guide visuel d'alignement au centre vertical */}
+      {movingInfo && (movingInfo as any).isCenteredY && (
+        <div className="absolute left-0 right-0 top-1/2 h-0.5 border-b-2 border-dashed border-[#5B5BF0] -translate-y-1/2 pointer-events-none z-30 animate-pulse" />
+      )}
+
       {/* Infobulle de coordonnées dynamiques lors du déplacement libre */}
       {movingInfo && (
-        <div className="absolute -top-9 left-1/2 -translate-x-1/2 z-50 px-2.5 py-1 bg-[#10B981] text-white text-[11px] font-mono font-bold rounded-lg shadow-xl pointer-events-none whitespace-nowrap animate-in fade-in flex items-center gap-1.5">
+        <div
+          className={`absolute -top-9 left-1/2 -translate-x-1/2 z-50 px-2.5 py-1 text-white text-[11px] font-mono font-bold rounded-lg shadow-xl pointer-events-none whitespace-nowrap animate-in fade-in flex items-center gap-1.5 ${
+            (movingInfo as any).isCenteredX || (movingInfo as any).isCenteredY
+              ? 'bg-[#5B5BF0] ring-2 ring-[#7D7DF8]'
+              : (movingInfo as any).isAtBoundary
+              ? 'bg-amber-600 ring-2 ring-amber-400'
+              : 'bg-[#10B981]'
+          }`}
+        >
           <Move className="w-3 h-3" />
-          <span>X: {movingInfo.x}px, Y: {movingInfo.y}px</span>
+          <span>
+            X: {movingInfo.x}px, Y: {movingInfo.y}px
+            {(movingInfo as any).isCenteredX && (movingInfo as any).isCenteredY
+              ? ' 🎯 [Centré Horizontale & Verticale]'
+              : (movingInfo as any).isCenteredX
+              ? ' 🎯 [Centré Horizontale]'
+              : (movingInfo as any).isCenteredY
+              ? ' 🎯 [Centré Verticale]'
+              : (movingInfo as any).isAtBoundary
+              ? ' 🔒 [Limite du canevas]'
+              : ''}
+          </span>
         </div>
       )}
 

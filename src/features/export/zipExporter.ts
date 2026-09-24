@@ -219,6 +219,122 @@ function renderElementToHTML(element: Element, page: Page, project: Project): st
       return `<iframe id="${elId}" src="${escapeHtml(src)}" title="${escapeHtml(title)}" class="el-iframe" loading="lazy"></iframe>`;
     }
 
+    case 'navbar': {
+      const links: Array<{ label: string; href: string }> = props.links || [
+        { label: 'Accueil', href: '#' },
+        { label: 'Services', href: '#services' },
+        { label: 'Tarifs', href: '#tarifs' },
+        { label: 'Contact', href: '#contact' },
+      ];
+      const logoHtml = props.brandLogoUrl
+        ? `<img src="${escapeHtml(props.brandLogoUrl)}" alt="${escapeHtml(props.brandText || 'Logo')}" class="el-navbar-logo">`
+        : `<span class="el-navbar-brand-text">${escapeHtml(props.brandText || 'MonStudio')}</span>`;
+      const linksHtml = links
+        .map((lnk) => `<a href="${escapeHtml(lnk.href || '#')}" class="el-navbar-link">${escapeHtml(lnk.label)}</a>`)
+        .join('');
+      const ctaHtml = props.ctaLabel
+        ? `<a href="${escapeHtml(props.ctaHref || '#')}" class="el-button el-navbar-cta">${escapeHtml(props.ctaLabel)}</a>`
+        : '';
+
+      return `<nav id="${elId}" class="el-navbar"><div class="el-navbar-brand">${logoHtml}</div><div class="el-navbar-links">${linksHtml}</div>${ctaHtml}</nav>`;
+    }
+
+    case 'tabs': {
+      const tabsList: Array<{ title: string; content: string }> = props.tabs || [
+        { title: 'Onglet 1', content: 'Contenu du premier volet.' },
+        { title: 'Onglet 2', content: 'Contenu du deuxième volet.' },
+      ];
+      const navButtons = tabsList
+        .map((tItem, idx) => `<button type="button" class="el-tab-btn ${idx === 0 ? 'active' : ''}" data-tab-target="${elId}-tab-${idx}">${escapeHtml(tItem.title)}</button>`)
+        .join('');
+      const tabPanels = tabsList
+        .map((tItem, idx) => `<div id="${elId}-tab-${idx}" class="el-tab-panel ${idx === 0 ? 'active' : ''}">${escapeHtml(tItem.content)}</div>`)
+        .join('');
+
+      return `<div id="${elId}" class="el-tabs-container"><div class="el-tabs-nav">${navButtons}</div><div class="el-tabs-content">${tabPanels}</div></div>`;
+    }
+
+    case 'rating': {
+      const score = Number(props.score ?? 5);
+      const maxScore = Number(props.maxScore ?? 5);
+      const stars = '★'.repeat(Math.round(score)) + '☆'.repeat(Math.max(0, maxScore - Math.round(score)));
+      const count = props.reviewCount ? `<span class="el-rating-count">(${escapeHtml(props.reviewCount)})</span>` : '';
+      return `<div id="${elId}" class="el-rating"><span class="el-rating-stars">${stars}</span> <span class="el-rating-score">${score.toFixed(1)}/${maxScore}</span> ${count}</div>`;
+    }
+
+    case 'stat_kpi': {
+      const trend = props.trend ? `<div class="el-stat-trend">↑ ${escapeHtml(props.trend)}</div>` : '';
+      return `<div id="${elId}" class="el-stat-kpi"><div class="el-stat-label">${escapeHtml(props.label || 'KPI')}</div><div class="el-stat-value">${escapeHtml(props.value || '100%')}</div>${trend}</div>`;
+    }
+
+    case 'alert': {
+      const variant = props.variant || 'info';
+      const title = props.title ? `<strong class="el-alert-title">${escapeHtml(props.title)}</strong>` : '';
+      return `<aside id="${elId}" class="el-alert el-alert-${escapeHtml(variant)}">${title}<p class="el-alert-msg">${escapeHtml(props.message || '')}</p></aside>`;
+    }
+
+    case 'video_embed': {
+      const rawUrl = props.videoUrl || '';
+      let embedUrl = rawUrl;
+      if (rawUrl.includes('youtube.com/watch?v=')) {
+        embedUrl = `https://www.youtube-nocookie.com/embed/${rawUrl.split('v=')[1]?.split('&')[0]}`;
+      } else if (rawUrl.includes('youtu.be/')) {
+        embedUrl = `https://www.youtube-nocookie.com/embed/${rawUrl.split('youtu.be/')[1]?.split('?')[0]}`;
+      } else if (rawUrl.includes('vimeo.com/')) {
+        embedUrl = `https://player.vimeo.com/video/${rawUrl.split('vimeo.com/')[1]?.split('?')[0]}`;
+      }
+      return `<div id="${elId}" class="el-video-embed-wrapper"><iframe src="${escapeHtml(embedUrl)}" class="el-video-embed" allowfullscreen loading="lazy"></iframe></div>`;
+    }
+
+    case 'carousel': {
+      const images: Array<{ url: string; caption?: string }> = props.images || [];
+      const slidesHtml = images
+        .map((img, idx) => `<div class="el-carousel-slide ${idx === 0 ? 'active' : ''}"><img src="${escapeHtml(img.url)}" alt="${escapeHtml(img.caption || 'Photo')}" loading="lazy">${img.caption ? `<div class="el-carousel-caption">${escapeHtml(img.caption)}</div>` : ''}</div>`)
+        .join('');
+      return `<div id="${elId}" class="el-carousel"><div class="el-carousel-slides">${slidesHtml}</div></div>`;
+    }
+
+    case 'textarea': {
+      const label = props.label ? `<label class="el-label">${escapeHtml(props.label)}</label>` : '';
+      const ph = props.placeholder || '';
+      const rows = props.rows || 4;
+      return `<div class="el-input-wrapper">${label}<textarea id="${elId}" rows="${rows}" placeholder="${escapeHtml(ph)}" class="el-textarea"></textarea></div>`;
+    }
+
+    case 'select': {
+      const label = props.label ? `<label class="el-label">${escapeHtml(props.label)}</label>` : '';
+      const options: string[] = props.options || [];
+      const optsHtml = options.map((opt) => `<option value="${escapeHtml(opt)}">${escapeHtml(opt)}</option>`).join('');
+      return `<div class="el-input-wrapper">${label}<select id="${elId}" class="el-select">${optsHtml}</select></div>`;
+    }
+
+    case 'radio': {
+      const label = props.label ? `<div class="el-label">${escapeHtml(props.label)}</div>` : '';
+      const options: string[] = props.options || [];
+      const radioHtml = options
+        .map((opt, i) => `<label class="el-radio-item"><input type="radio" name="${escapeHtml(props.name || elId)}" value="${escapeHtml(opt)}" ${i === 0 ? 'checked' : ''}> <span>${escapeHtml(opt)}</span></label>`)
+        .join('');
+      return `<div class="el-radio-group">${label}${radioHtml}</div>`;
+    }
+
+    case 'switch': {
+      const label = props.label || 'Interrupteur';
+      const isChecked = props.checked ? ' checked' : '';
+      return `<label class="el-switch-wrapper"><input id="${elId}" type="checkbox" class="el-switch-input"${isChecked}><span class="el-switch-slider"></span><span class="el-switch-label">${escapeHtml(label)}</span></label>`;
+    }
+
+    case 'range': {
+      const label = props.label ? `<div class="el-label">${escapeHtml(props.label)} (${escapeHtml(String(props.value || 50))} ${escapeHtml(props.unit || '')})</div>` : '';
+      return `<div class="el-range-wrapper">${label}<input id="${elId}" type="range" min="${props.min ?? 0}" max="${props.max ?? 100}" value="${props.value ?? 50}" class="el-range"></div>`;
+    }
+
+    case 'progress_bar': {
+      const label = props.label ? `<div class="el-label">${escapeHtml(props.label)} (${props.value ?? 60}%)</div>` : '';
+      const val = props.value ?? 60;
+      const color = props.color || 'var(--primary)';
+      return `<div id="${elId}" class="el-progress-wrapper">${label}<div class="el-progress-track"><div class="el-progress-fill" style="width: ${val}%; background-color: ${escapeHtml(color)};"></div></div></div>`;
+    }
+
     case 'custom_html': {
       return `<div id="${elId}" class="el-custom-html">${props.htmlCode || ''}</div>`;
     }
@@ -464,6 +580,185 @@ h3.el-heading { font-size: 1.5rem; }
   border-color: var(--primary);
 }
 
+.el-textarea {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  font-family: inherit;
+  border: 1px solid #E6E6EE;
+  border-radius: var(--radius);
+  outline: none;
+  background-color: var(--surface);
+  resize: vertical;
+}
+.el-textarea:focus { border-color: var(--primary); }
+
+.el-select {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  border: 1px solid #E6E6EE;
+  border-radius: var(--radius);
+  outline: none;
+  background-color: var(--surface);
+}
+
+.el-radio-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+.el-radio-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.el-switch-wrapper {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.75rem;
+  cursor: pointer;
+  margin-bottom: 1rem;
+}
+.el-switch-input { display: none; }
+.el-switch-slider {
+  width: 44px;
+  height: 24px;
+  background-color: #E2E8F0;
+  border-radius: 9999px;
+  position: relative;
+  transition: background-color 0.2s;
+}
+.el-switch-slider::after {
+  content: '';
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  background-color: white;
+  border-radius: 50%;
+  transition: transform 0.2s;
+}
+.el-switch-input:checked + .el-switch-slider { background-color: var(--primary); }
+.el-switch-input:checked + .el-switch-slider::after { transform: translateX(20px); }
+.el-switch-label { font-size: 0.9rem; font-weight: 600; }
+
+.el-range-wrapper { margin-bottom: 1rem; width: 100%; }
+.el-range { width: 100%; accent-color: var(--primary); }
+
+.el-progress-wrapper { margin-bottom: 1rem; width: 100%; }
+.el-progress-track {
+  width: 100%;
+  height: 10px;
+  background-color: #E2E8F0;
+  border-radius: 9999px;
+  overflow: hidden;
+}
+.el-progress-fill { height: 100%; border-radius: 9999px; transition: width 0.3s ease; }
+
+/* Navbar */
+.el-navbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 2rem;
+  background-color: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid #E6E6EE;
+  box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+  margin-bottom: 1.5rem;
+}
+.el-navbar-brand { font-size: 1.25rem; font-weight: 800; color: var(--text); }
+.el-navbar-links { display: flex; align-items: center; gap: 1.5rem; }
+.el-navbar-link { text-decoration: none; color: var(--text); font-size: 0.9rem; font-weight: 600; }
+.el-navbar-link:hover { color: var(--primary); }
+
+/* Tabs */
+.el-tabs-container {
+  background-color: var(--surface);
+  border-radius: var(--radius);
+  border: 1px solid #E6E6EE;
+  padding: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+.el-tabs-nav {
+  display: flex;
+  gap: 0.5rem;
+  border-bottom: 1px solid #E6E6EE;
+  margin-bottom: 1rem;
+}
+.el-tab-btn {
+  padding: 0.6rem 1.2rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+  border: none;
+  background: none;
+  cursor: pointer;
+  border-bottom: 2px solid transparent;
+  color: rgba(27, 27, 47, 0.6);
+}
+.el-tab-btn.active {
+  color: var(--primary);
+  border-bottom-color: var(--primary);
+}
+.el-tab-panel { display: none; font-size: 0.9rem; line-height: 1.6; }
+.el-tab-panel.active { display: block; }
+
+/* Rating */
+.el-rating {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background-color: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: var(--radius);
+}
+.el-rating-stars { color: #F59E0B; font-size: 1.1rem; }
+.el-rating-score { font-weight: 700; font-size: 0.9rem; }
+.el-rating-count { color: #6B7280; font-size: 0.8rem; }
+
+/* KPI */
+.el-stat-kpi {
+  background-color: var(--surface);
+  border: 1px solid #E6E6EE;
+  border-radius: var(--radius);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+.el-stat-label { font-size: 0.8rem; font-weight: 700; text-transform: uppercase; color: #8E8EA6; }
+.el-stat-value { font-size: 2.2rem; font-weight: 800; color: var(--text); line-height: 1; }
+.el-stat-trend { color: #10B981; font-weight: 700; font-size: 0.85rem; }
+
+/* Alert */
+.el-alert {
+  padding: 1rem 1.25rem;
+  border-radius: var(--radius);
+  border: 1px solid;
+  margin-bottom: 1rem;
+}
+.el-alert-title { display: block; margin-bottom: 0.25rem; font-size: 0.9rem; }
+.el-alert-msg { font-size: 0.85rem; }
+.el-alert-info { background: #EEF2FF; border-color: #C7D2FE; color: #3730A3; }
+.el-alert-success { background: #ECFDF5; border-color: #A7F3D0; color: #065F46; }
+.el-alert-warning { background: #FFFBEB; border-color: #FDE68A; color: #92400E; }
+.el-alert-error { background: #FEF2F2; border-color: #FECACA; color: #991B1B; }
+
+/* Video Embed & Carousel */
+.el-video-embed-wrapper { position: relative; padding-bottom: 56.25%; height: 0; overflow: hidden; border-radius: var(--radius); margin: 1rem 0; }
+.el-video-embed { position: absolute; top: 0; left: 0; width: 100%; height: 100%; border: 0; }
+
+.el-carousel { position: relative; border-radius: var(--radius); overflow: hidden; margin: 1rem 0; }
+.el-carousel-slides img { width: 100%; height: 350px; object-fit: cover; display: block; }
+.el-carousel-caption { position: absolute; bottom: 0; left: 0; right: 0; padding: 1rem; background: linear-gradient(transparent, rgba(0,0,0,0.7)); color: white; font-weight: 600; font-size: 0.9rem; }
+
 .el-container {
   display: flex;
   flex-direction: column;
@@ -527,14 +822,31 @@ document.addEventListener('DOMContentLoaded', function() {
   });
 
   // Gestion des formulaires
-  var inputs = document.querySelectorAll('.el-input');
+  var inputs = document.querySelectorAll('.el-input, .el-textarea');
   inputs.forEach(function(inp) {
     inp.addEventListener('keypress', function(e) {
-      if (e.key === 'Enter') {
+      if (e.key === 'Enter' && inp.tagName !== 'TEXTAREA') {
         e.preventDefault();
         showToast('Données envoyées : ' + inp.value);
         inp.value = '';
       }
+    });
+  });
+
+  // Gestion des Onglets (Tabs)
+  var tabButtons = document.querySelectorAll('.el-tab-btn');
+  tabButtons.forEach(function(btn) {
+    btn.addEventListener('click', function() {
+      var container = btn.closest('.el-tabs-container');
+      if (!container) return;
+      var targetId = btn.getAttribute('data-tab-target');
+      
+      container.querySelectorAll('.el-tab-btn').forEach(function(b) { b.classList.remove('active'); });
+      container.querySelectorAll('.el-tab-panel').forEach(function(p) { p.classList.remove('active'); });
+      
+      btn.classList.add('active');
+      var targetPanel = document.getElementById(targetId);
+      if (targetPanel) targetPanel.classList.add('active');
     });
   });
 

@@ -152,6 +152,7 @@ export function EditorPropertiesPanel() {
   });
 
   const [isMediaModalOpen, setIsMediaModalOpen] = React.useState(false);
+  const [mediaTarget, setMediaTarget] = React.useState<'src' | 'backgroundImage'>('src');
 
   const toggleSection = (sec: string) => {
     setOpenSections((prev) => ({ ...prev, [sec]: !prev[sec] }));
@@ -825,7 +826,10 @@ export function EditorPropertiesPanel() {
                     type="button"
                     variant="outline"
                     size="sm"
-                    onClick={() => setIsMediaModalOpen(true)}
+                    onClick={() => {
+                      setMediaTarget('src');
+                      setIsMediaModalOpen(true);
+                    }}
                     className="w-full text-xs flex items-center justify-center gap-1.5"
                   >
                     <ImageIcon className="w-3.5 h-3.5 text-[#5B5BF0]" />
@@ -926,6 +930,409 @@ export function EditorPropertiesPanel() {
                 onChange={(e) => handlePropChange('label', e.target.value)}
                 className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
               />
+            </div>
+          )}
+
+          {/* Barre de navigation <nav> */}
+          {element.type === 'navbar' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Nom de la marque / Logo texte
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.brandText || ''}
+                  onChange={(e) => handlePropChange('brandText', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  URL du logo image (facultatif)
+                </label>
+                <input
+                  type="text"
+                  placeholder="https://..."
+                  value={element.props?.brandLogoUrl || ''}
+                  onChange={(e) => handlePropChange('brandLogoUrl', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Bouton CTA (Libellé)
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.ctaLabel || ''}
+                  onChange={(e) => handlePropChange('ctaLabel', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Bouton CTA (Lien href)
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.ctaHref || ''}
+                  onChange={(e) => handlePropChange('ctaHref', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Zone de texte <textarea> */}
+          {element.type === 'textarea' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Libellé du champ
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.label || ''}
+                  onChange={(e) => handlePropChange('label', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Texte d’indication (Placeholder)
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.placeholder || ''}
+                  onChange={(e) => handlePropChange('placeholder', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Nombre de lignes (hauteur)
+                </label>
+                <input
+                  type="number"
+                  min={2}
+                  max={12}
+                  value={element.props?.rows || 4}
+                  onChange={(e) => handlePropChange('rows', Number(e.target.value))}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Menu déroulant <select> */}
+          {element.type === 'select' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Libellé
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.label || ''}
+                  onChange={(e) => handlePropChange('label', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Options (séparées par des virgules)
+                </label>
+                <input
+                  type="text"
+                  value={(element.props?.options || []).join(', ')}
+                  onChange={(e) =>
+                    handlePropChange(
+                      'options',
+                      e.target.value.split(',').map((s) => s.trim()).filter(Boolean)
+                    )
+                  }
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Boutons radio <radio> */}
+          {element.type === 'radio' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Libellé du groupe
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.label || ''}
+                  onChange={(e) => handlePropChange('label', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Choix possibles (séparés par virgules)
+                </label>
+                <input
+                  type="text"
+                  value={(element.props?.options || []).join(', ')}
+                  onChange={(e) =>
+                    handlePropChange(
+                      'options',
+                      e.target.value.split(',').map((s) => s.trim()).filter(Boolean)
+                    )
+                  }
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Interrupteur switch */}
+          {element.type === 'switch' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Libellé de l'interrupteur
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.label || ''}
+                  onChange={(e) => handlePropChange('label', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-xs text-[#62627A] dark:text-[#A5A5BC]">État par défaut</span>
+                <input
+                  type="checkbox"
+                  checked={element.props?.checked ?? true}
+                  onChange={(e) => handlePropChange('checked', e.target.checked)}
+                  className="w-4 h-4 text-[#5B5BF0] rounded"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Curseur range */}
+          {element.type === 'range' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Libellé
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.label || ''}
+                  onChange={(e) => handlePropChange('label', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div className="grid grid-cols-3 gap-2">
+                <div>
+                  <label className="text-[10px] text-[#8E8EA6] block">Min</label>
+                  <input
+                    type="number"
+                    value={element.props?.min ?? 0}
+                    onChange={(e) => handlePropChange('min', Number(e.target.value))}
+                    className="w-full px-2 py-1 text-xs rounded-lg border border-[#E6E6EE] dark:border-[#28283C]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-[#8E8EA6] block">Max</label>
+                  <input
+                    type="number"
+                    value={element.props?.max ?? 100}
+                    onChange={(e) => handlePropChange('max', Number(e.target.value))}
+                    className="w-full px-2 py-1 text-xs rounded-lg border border-[#E6E6EE] dark:border-[#28283C]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-[#8E8EA6] block">Unité</label>
+                  <input
+                    type="text"
+                    value={element.props?.unit || ''}
+                    placeholder="€, %, px"
+                    onChange={(e) => handlePropChange('unit', e.target.value)}
+                    className="w-full px-2 py-1 text-xs rounded-lg border border-[#E6E6EE] dark:border-[#28283C]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Barre de progression progress_bar */}
+          {element.type === 'progress_bar' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Libellé
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.label || ''}
+                  onChange={(e) => handlePropChange('label', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-[#8E8EA6] block">Valeur ({element.props?.value ?? 60}%)</label>
+                  <input
+                    type="number"
+                    min={0}
+                    max={100}
+                    value={element.props?.value ?? 60}
+                    onChange={(e) => handlePropChange('value', Number(e.target.value))}
+                    className="w-full px-2 py-1 text-xs rounded-lg border border-[#E6E6EE] dark:border-[#28283C]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-[#8E8EA6] block">Couleur</label>
+                  <input
+                    type="color"
+                    value={element.props?.color || '#5B5BF0'}
+                    onChange={(e) => handlePropChange('color', e.target.value)}
+                    className="w-full h-7 rounded-lg border border-[#E6E6EE] cursor-pointer"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Vidéo YouTube / Vimeo Embed */}
+          {element.type === 'video_embed' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  URL de la vidéo (YouTube / Vimeo)
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.videoUrl || ''}
+                  onChange={(e) => handlePropChange('videoUrl', e.target.value)}
+                  placeholder="https://www.youtube.com/watch?v=..."
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Étoiles de notation rating */}
+          {element.type === 'rating' && (
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] text-[#8E8EA6] block">Note (sur 5)</label>
+                  <input
+                    type="number"
+                    step="0.1"
+                    min={0}
+                    max={5}
+                    value={element.props?.score ?? 5}
+                    onChange={(e) => handlePropChange('score', Number(e.target.value))}
+                    className="w-full px-2 py-1 text-xs rounded-lg border border-[#E6E6EE] dark:border-[#28283C]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-[#8E8EA6] block">Texte des avis</label>
+                  <input
+                    type="text"
+                    value={element.props?.reviewCount || ''}
+                    placeholder="128 avis"
+                    onChange={(e) => handlePropChange('reviewCount', e.target.value)}
+                    className="w-full px-2 py-1 text-xs rounded-lg border border-[#E6E6EE] dark:border-[#28283C]"
+                  />
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* KPI Stat */}
+          {element.type === 'stat_kpi' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Valeur Clé (Grand Chiffre)
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.value || ''}
+                  placeholder="99.9%"
+                  onChange={(e) => handlePropChange('value', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Libellé
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.label || ''}
+                  placeholder="Satisfaction client"
+                  onChange={(e) => handlePropChange('label', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Tendance
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.trend || ''}
+                  placeholder="+14% ce mois"
+                  onChange={(e) => handlePropChange('trend', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+            </div>
+          )}
+
+          {/* Alerte alert */}
+          {element.type === 'alert' && (
+            <div className="space-y-3">
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Type d'alerte
+                </label>
+                <select
+                  value={element.props?.variant || 'info'}
+                  onChange={(e) => handlePropChange('variant', e.target.value)}
+                  className="w-full h-8 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-xl px-2.5 text-xs"
+                >
+                  <option value="info">Information (Bleu)</option>
+                  <option value="success">Succès (Vert)</option>
+                  <option value="warning">Avertissement (Orange)</option>
+                  <option value="error">Erreur (Rouge)</option>
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Titre
+                </label>
+                <input
+                  type="text"
+                  value={element.props?.title || ''}
+                  onChange={(e) => handlePropChange('title', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Message
+                </label>
+                <textarea
+                  rows={2}
+                  value={element.props?.message || ''}
+                  onChange={(e) => handlePropChange('message', e.target.value)}
+                  className="w-full p-2 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+                />
+              </div>
             </div>
           )}
 
@@ -1351,119 +1758,601 @@ export function EditorPropertiesPanel() {
           )}
         </PropSection>
 
-        {/* ================= 4. DISPOSITION & ALIGNEMENT ================= */}
-        {(element.type === 'box' || element.type === 'section' || element.type === 'columns') && (
-          <PropSection
-            title="Disposition & Alignement"
-            icon={<Layout className="w-3.5 h-3.5" />}
-            isOpen={openSections.layout}
-            onToggle={() => toggleSection('layout')}
-          >
-            {/* Direction */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
-                  Direction de la disposition
-                </label>
-                <InfoTooltip text="Ligne : place les éléments côte à côte. Colonne : empile les éléments les uns sous les autres." />
-              </div>
-              <div className="grid grid-cols-2 gap-1.5 p-1 rounded-xl bg-[#F7F7FA] dark:bg-[#202030] border border-[#E6E6EE] dark:border-[#28283C]">
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleStyleChange('flexDirection', 'column');
-                    handlePropChange('direction', 'vertical');
-                  }}
-                  className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                    (effectiveStyle.flexDirection || element.props?.direction) !== 'row' &&
-                    element.props?.direction !== 'horizontal'
-                      ? 'bg-white dark:bg-[#181824] text-[#5B5BF0] dark:text-[#6B6BF7] shadow-xs'
-                      : 'text-[#62627A] dark:text-[#8E8EA6]'
-                  }`}
-                >
-                  ↓ Colonne (Vertical)
-                </button>
-                <button
-                  type="button"
-                  onClick={() => {
-                    handleStyleChange('flexDirection', 'row');
-                    handlePropChange('direction', 'horizontal');
-                  }}
-                  className={`py-1.5 text-xs font-semibold rounded-lg transition-all ${
-                    effectiveStyle.flexDirection === 'row' || element.props?.direction === 'horizontal'
-                      ? 'bg-white dark:bg-[#181824] text-[#5B5BF0] dark:text-[#6B6BF7] shadow-xs'
-                      : 'text-[#62627A] dark:text-[#8E8EA6]'
-                  }`}
-                >
-                  → Ligne (Horizontal)
-                </button>
-              </div>
+        {/* ================= 4. DISPOSITION, FLEXBOX & CSS GRID ================= */}
+        <PropSection
+          title="Disposition (Display, Flexbox & Grid)"
+          icon={<Layout className="w-3.5 h-3.5" />}
+          isOpen={openSections.layout}
+          onToggle={() => toggleSection('layout')}
+          badge={
+            isPropOverridden('display') ||
+            isPropOverridden('flexDirection') ||
+            isPropOverridden('gridTemplateColumns') ||
+            isPropOverridden('justifyContent') ||
+            isPropOverridden('alignItems') ? (
+              <span className="w-2 h-2 rounded-full bg-[#5B5BF0]" />
+            ) : null
+          }
+        >
+          {/* Mode de Display CSS */}
+          <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                Mode d'affichage (Display)
+              </label>
+              <InfoTooltip text="Block : bloc standard. Flex : mise en page flexible. Grid : grille CSS 2D. Inline-block : en ligne avec dimensions." />
             </div>
 
-            {/* Alignement des éléments (Align items) */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
-                  Alignement transversal
-                </label>
-                <InfoTooltip text="Aligne les éléments au début, au centre, à la fin ou les étire sur toute la largeur." />
-              </div>
-              <div className="grid grid-cols-4 gap-1">
-                {[
-                  { label: 'Début', val: 'flex-start' },
-                  { label: 'Centre', val: 'center' },
-                  { label: 'Fin', val: 'flex-end' },
-                  { label: 'Étirer', val: 'stretch' },
-                ].map((item) => (
+            <div className="grid grid-cols-3 gap-1 p-1 rounded-xl bg-[#F7F7FA] dark:bg-[#202030] border border-[#E6E6EE] dark:border-[#28283C]">
+              {[
+                { label: 'Bloc (Block)', val: 'block' },
+                { label: 'Flexbox ⚡', val: 'flex' },
+                { label: 'Grille (Grid) 📐', val: 'grid' },
+                { label: 'Inline-Block', val: 'inline-block' },
+                { label: 'Inline-Flex', val: 'inline-flex' },
+                { label: 'Masqué (None)', val: 'none' },
+              ].map((d) => {
+                const currentDisplay = effectiveStyle.display || (element.type === 'box' || element.type === 'section' || element.type === 'columns' ? 'flex' : 'block');
+                const isCurrent = currentDisplay === d.val;
+                return (
                   <button
-                    key={item.label}
+                    key={d.val}
                     type="button"
-                    onClick={() => handleStyleChange('alignItems', item.val)}
-                    className={`py-1 text-[11px] font-medium rounded-lg border transition-all ${
-                      effectiveStyle.alignItems === item.val
-                        ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038] dark:text-[#6B6BF7]'
-                        : 'border-[#E6E6EE] dark:border-[#28283C] bg-white dark:bg-[#181824] text-[#62627A] dark:text-[#A5A5BC]'
+                    onClick={() => {
+                      handleStyleChange('display', d.val);
+                      if (d.val === 'flex' && !effectiveStyle.flexDirection) {
+                        handleStyleChange('flexDirection', 'column');
+                      }
+                      if (d.val === 'grid' && !effectiveStyle.gridTemplateColumns) {
+                        handleStyleChange('gridTemplateColumns', 'repeat(2, 1fr)');
+                      }
+                    }}
+                    className={`py-1.5 px-1 text-[10px] font-semibold rounded-lg transition-all text-center truncate ${
+                      isCurrent
+                        ? 'bg-[#5B5BF0] text-white shadow-xs font-bold'
+                        : 'text-[#62627A] dark:text-[#8E8EA6] hover:bg-white/50 dark:hover:bg-[#181824]'
                     }`}
                   >
-                    {item.label}
+                    {d.label}
                   </button>
-                ))}
-              </div>
+                );
+              })}
             </div>
+          </div>
 
-            {/* Justification du contenu */}
-            <div>
-              <div className="flex items-center justify-between mb-1">
-                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
-                  Distribution (Justify Content)
+          {/* ================= SOUS-SECTION FLEXBOX ================= */}
+          {((effectiveStyle.display || (['box', 'section', 'columns'].includes(element.type) ? 'flex' : 'block')) === 'flex' ||
+            effectiveStyle.display === 'inline-flex') && (
+            <div className="space-y-3 pt-2 border-t border-[#E6E6EE] dark:border-[#28283C] animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#5B5BF0] flex items-center gap-1">
+                  ⚡ Options Flexbox
+                </span>
+              </div>
+
+              {/* Flex Direction */}
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Direction du flux (flex-direction)
                 </label>
-                <InfoTooltip text="Répartition de l'espace le long de l'axe principal." />
+                <div className="grid grid-cols-2 gap-1">
+                  {[
+                    { label: '↓ Colonne (Vertical)', val: 'column' },
+                    { label: '→ Ligne (Horizontal)', val: 'row' },
+                    { label: '↑ Colonne Inversée', val: 'column-reverse' },
+                    { label: '← Ligne Inversée', val: 'row-reverse' },
+                  ].map((dir) => (
+                    <button
+                      key={dir.val}
+                      type="button"
+                      onClick={() => handleStyleChange('flexDirection', dir.val)}
+                      className={`py-1 px-1.5 text-[11px] font-medium rounded-lg border transition-all ${
+                        (effectiveStyle.flexDirection || 'column') === dir.val
+                          ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038] dark:text-[#6B6BF7] font-semibold'
+                          : 'border-[#E6E6EE] dark:border-[#28283C] bg-white dark:bg-[#181824] text-[#62627A] dark:text-[#A5A5BC]'
+                      }`}
+                    >
+                      {dir.label}
+                    </button>
+                  ))}
+                </div>
               </div>
-              <div className="grid grid-cols-3 gap-1">
-                {[
-                  { label: 'Début', val: 'flex-start' },
-                  { label: 'Centre', val: 'center' },
-                  { label: 'Espacé', val: 'space-between' },
-                ].map((item) => (
-                  <button
-                    key={item.label}
-                    type="button"
-                    onClick={() => handleStyleChange('justifyContent', item.val)}
-                    className={`py-1 text-[11px] font-medium rounded-lg border transition-all ${
-                      effectiveStyle.justifyContent === item.val
-                        ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038] dark:text-[#6B6BF7]'
-                        : 'border-[#E6E6EE] dark:border-[#28283C] bg-white dark:bg-[#181824] text-[#62627A] dark:text-[#A5A5BC]'
-                    }`}
-                  >
-                    {item.label}
-                  </button>
-                ))}
+
+              {/* Flex Wrap (Retour à la ligne) */}
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Retour à la ligne (flex-wrap)
+                </label>
+                <div className="grid grid-cols-3 gap-1">
+                  {[
+                    { label: 'Ligne unique', val: 'nowrap' },
+                    { label: 'Retour auto (Wrap)', val: 'wrap' },
+                    { label: 'Wrap Inversé', val: 'wrap-reverse' },
+                  ].map((w) => (
+                    <button
+                      key={w.val}
+                      type="button"
+                      onClick={() => handleStyleChange('flexWrap', w.val)}
+                      className={`py-1 text-[10px] font-medium rounded-lg border transition-all ${
+                        (effectiveStyle.flexWrap || 'nowrap') === w.val
+                          ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038] dark:text-[#6B6BF7] font-semibold'
+                          : 'border-[#E6E6EE] dark:border-[#28283C] bg-white dark:bg-[#181824] text-[#62627A] dark:text-[#A5A5BC]'
+                      }`}
+                    >
+                      {w.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Justify Content */}
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Alignement principal (justify-content)
+                </label>
+                <div className="grid grid-cols-3 gap-1">
+                  {[
+                    { label: 'Début', val: 'flex-start' },
+                    { label: 'Centre', val: 'center' },
+                    { label: 'Fin', val: 'flex-end' },
+                    { label: 'Espaces Extrêmes', val: 'space-between' },
+                    { label: 'Espaces Autour', val: 'space-around' },
+                    { label: 'Espaces Égaux', val: 'space-evenly' },
+                  ].map((j) => (
+                    <button
+                      key={j.val}
+                      type="button"
+                      onClick={() => handleStyleChange('justifyContent', j.val)}
+                      className={`py-1 text-[10px] font-medium rounded-lg border transition-all ${
+                        effectiveStyle.justifyContent === j.val
+                          ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038] dark:text-[#6B6BF7] font-semibold'
+                          : 'border-[#E6E6EE] dark:border-[#28283C] bg-white dark:bg-[#181824] text-[#62627A] dark:text-[#A5A5BC]'
+                      }`}
+                    >
+                      {j.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Align Items */}
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Alignement transversal (align-items)
+                </label>
+                <div className="grid grid-cols-3 gap-1">
+                  {[
+                    { label: 'Début (Haut)', val: 'flex-start' },
+                    { label: 'Centre', val: 'center' },
+                    { label: 'Fin (Bas)', val: 'flex-end' },
+                    { label: 'Étirer (Stretch)', val: 'stretch' },
+                    { label: 'Ligne de base', val: 'baseline' },
+                  ].map((a) => (
+                    <button
+                      key={a.val}
+                      type="button"
+                      onClick={() => handleStyleChange('alignItems', a.val)}
+                      className={`py-1 text-[10px] font-medium rounded-lg border transition-all ${
+                        effectiveStyle.alignItems === a.val
+                          ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038] dark:text-[#6B6BF7] font-semibold'
+                          : 'border-[#E6E6EE] dark:border-[#28283C] bg-white dark:bg-[#181824] text-[#62627A] dark:text-[#A5A5BC]'
+                      }`}
+                    >
+                      {a.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Align Content */}
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Alignement multi-lignes (align-content)
+                </label>
+                <select
+                  value={effectiveStyle.alignContent || 'stretch'}
+                  onChange={(e) => handleStyleChange('alignContent', e.target.value)}
+                  className="w-full h-8 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-xl px-2.5 text-xs text-[#1B1B2F] dark:text-[#F4F4F9]"
+                >
+                  <option value="stretch">Étirer les lignes (Stretch)</option>
+                  <option value="flex-start">Regrouper en haut (flex-start)</option>
+                  <option value="center">Regrouper au centre (center)</option>
+                  <option value="flex-end">Regrouper en bas (flex-end)</option>
+                  <option value="space-between">Distribuer (space-between)</option>
+                  <option value="space-around">Espaces répartis (space-around)</option>
+                </select>
+              </div>
+
+              {/* Espacement Flexbox (Gap Flex) */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                    Espacement Flexbox (Gap Flex)
+                  </label>
+                  <InfoTooltip text="L'espace d'aération entre chaque élément enfant aligné dans ce conteneur Flexbox." />
+                </div>
+
+                <div className="grid grid-cols-5 gap-1 mb-2">
+                  {['0px', '8px', '16px', '24px', '32px'].map((gVal) => (
+                    <button
+                      key={gVal}
+                      type="button"
+                      onClick={() => handleStyleChange('gap', gVal)}
+                      className={`py-1 text-[10px] font-medium rounded-lg border transition-all ${
+                        effectiveStyle.gap === gVal
+                          ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038] dark:text-[#6B6BF7] font-semibold'
+                          : 'border-[#E6E6EE] dark:border-[#28283C] bg-white dark:bg-[#181824] text-[#62627A] dark:text-[#A5A5BC]'
+                      }`}
+                    >
+                      {gVal}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="range"
+                    min="0"
+                    max="64"
+                    step="2"
+                    value={parseInt(String(effectiveStyle.gap || '16'), 10) || 0}
+                    onChange={(e) => handleStyleChange('gap', `${e.target.value}px`)}
+                    className="flex-1 accent-[#5B5BF0]"
+                  />
+                  <span className="text-xs font-mono font-bold text-[#5B5BF0] w-12 text-right">
+                    {effectiveStyle.gap || '16px'}
+                  </span>
+                </div>
+
+                {/* Gap Ligne & Colonne séparés */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div>
+                    <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                      Gap Lignes (row-gap)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="ex: 12px"
+                      value={effectiveStyle.rowGap || ''}
+                      onChange={(e) => handleStyleChange('rowGap', e.target.value)}
+                      className="w-full px-2 py-1 text-xs rounded-lg bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                      Gap Colonnes (column-gap)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="ex: 20px"
+                      value={effectiveStyle.columnGap || ''}
+                      onChange={(e) => handleStyleChange('columnGap', e.target.value)}
+                      className="w-full px-2 py-1 text-xs rounded-lg bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none"
+                    />
+                  </div>
+                </div>
               </div>
             </div>
-          </PropSection>
-        )}
+          )}
 
-        {/* ================= 5. COULEURS & ARRIÈRE-PLAN ================= */}
+          {/* ================= SOUS-SECTION CSS GRID ================= */}
+          {(effectiveStyle.display === 'grid' || effectiveStyle.display === 'inline-grid') && (
+            <div className="space-y-3 pt-2 border-t border-[#E6E6EE] dark:border-[#28283C] animate-in fade-in">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#5B5BF0] flex items-center gap-1">
+                  📐 Options Grille CSS (Grid)
+                </span>
+              </div>
+
+              {/* Grid Template Columns */}
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Colonnes de la grille (grid-template-columns)
+                </label>
+                <div className="grid grid-cols-2 gap-1 mb-2">
+                  {[
+                    { label: '2 Colonnes', val: 'repeat(2, 1fr)' },
+                    { label: '3 Colonnes', val: 'repeat(3, 1fr)' },
+                    { label: '4 Colonnes', val: 'repeat(4, 1fr)' },
+                    { label: '⚡ Auto-Fit (Responsive)', val: 'repeat(auto-fit, minmax(220px, 1fr))' },
+                    { label: '1/3 - 2/3', val: '1fr 2fr' },
+                    { label: 'Sidebar + Main', val: '240px 1fr' },
+                  ].map((preset) => (
+                    <button
+                      key={preset.label}
+                      type="button"
+                      onClick={() => handleStyleChange('gridTemplateColumns', preset.val)}
+                      className={`py-1 px-1.5 text-[10px] font-medium rounded-lg border transition-all text-left truncate ${
+                        effectiveStyle.gridTemplateColumns === preset.val
+                          ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038] dark:text-[#6B6BF7] font-semibold'
+                          : 'border-[#E6E6EE] dark:border-[#28283C] bg-white dark:bg-[#181824] text-[#62627A] dark:text-[#A5A5BC]'
+                      }`}
+                    >
+                      {preset.label}
+                    </button>
+                  ))}
+                </div>
+                <input
+                  type="text"
+                  placeholder="Ex: repeat(3, 1fr) ou 200px 1fr 200px"
+                  value={effectiveStyle.gridTemplateColumns || ''}
+                  onChange={(e) => handleStyleChange('gridTemplateColumns', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none"
+                />
+              </div>
+
+              {/* Grid Template Rows */}
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Lignes de la grille (grid-template-rows)
+                </label>
+                <input
+                  type="text"
+                  placeholder="Ex: auto, repeat(2, 1fr), 80px 1fr 60px"
+                  value={effectiveStyle.gridTemplateRows || ''}
+                  onChange={(e) => handleStyleChange('gridTemplateRows', e.target.value)}
+                  className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none"
+                />
+              </div>
+
+              {/* Grid Auto Flow */}
+              <div>
+                <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9] block mb-1">
+                  Flux automatique (grid-auto-flow)
+                </label>
+                <select
+                  value={effectiveStyle.gridAutoFlow || 'row'}
+                  onChange={(e) => handleStyleChange('gridAutoFlow', e.target.value)}
+                  className="w-full h-8 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-xl px-2.5 text-xs text-[#1B1B2F] dark:text-[#F4F4F9]"
+                >
+                  <option value="row">Remplir par lignes (row)</option>
+                  <option value="column">Remplir par colonnes (column)</option>
+                  <option value="dense">Mode compact sans trous (dense)</option>
+                  <option value="row dense">Lignes compactes (row dense)</option>
+                  <option value="column dense">Colonnes compactes (column dense)</option>
+                </select>
+              </div>
+
+              {/* Alignement des éléments dans la grille */}
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[11px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-1">
+                    Justify Items
+                  </label>
+                  <select
+                    value={effectiveStyle.justifyItems || 'stretch'}
+                    onChange={(e) => handleStyleChange('justifyItems', e.target.value)}
+                    className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg px-2 text-[11px] text-[#1B1B2F] dark:text-[#F4F4F9]"
+                  >
+                    <option value="stretch">Étirer (stretch)</option>
+                    <option value="start">Début (start)</option>
+                    <option value="center">Centre (center)</option>
+                    <option value="end">Fin (end)</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="text-[11px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-1">
+                    Align Items
+                  </label>
+                  <select
+                    value={effectiveStyle.alignItems || 'stretch'}
+                    onChange={(e) => handleStyleChange('alignItems', e.target.value)}
+                    className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg px-2 text-[11px] text-[#1B1B2F] dark:text-[#F4F4F9]"
+                  >
+                    <option value="stretch">Étirer (stretch)</option>
+                    <option value="start">Haut (start)</option>
+                    <option value="center">Centre (center)</option>
+                    <option value="end">Bas (end)</option>
+                  </select>
+                </div>
+              </div>
+
+              {/* Espacement de Grille (Gap Grid) */}
+              <div>
+                <div className="flex items-center justify-between mb-1">
+                  <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                    Espacement de Grille (Gap Grid)
+                  </label>
+                  <InfoTooltip text="L'écartement entre les mailles (lignes et colonnes) de la grille CSS." />
+                </div>
+
+                <div className="grid grid-cols-5 gap-1 mb-2">
+                  {['0px', '12px', '20px', '32px', '48px'].map((gVal) => (
+                    <button
+                      key={gVal}
+                      type="button"
+                      onClick={() => handleStyleChange('gap', gVal)}
+                      className={`py-1 text-[10px] font-medium rounded-lg border transition-all ${
+                        effectiveStyle.gap === gVal
+                          ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038] dark:text-[#6B6BF7] font-semibold'
+                          : 'border-[#E6E6EE] dark:border-[#28283C] bg-white dark:bg-[#181824] text-[#62627A] dark:text-[#A5A5BC]'
+                      }`}
+                    >
+                      {gVal}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex items-center gap-2 mb-2">
+                  <input
+                    type="range"
+                    min="0"
+                    max="64"
+                    step="2"
+                    value={parseInt(String(effectiveStyle.gap || '20'), 10) || 0}
+                    onChange={(e) => handleStyleChange('gap', `${e.target.value}px`)}
+                    className="flex-1 accent-[#5B5BF0]"
+                  />
+                  <span className="text-xs font-mono font-bold text-[#5B5BF0] w-12 text-right">
+                    {effectiveStyle.gap || '20px'}
+                  </span>
+                </div>
+
+                {/* Gap Ligne & Colonne de Grille séparés */}
+                <div className="grid grid-cols-2 gap-2 pt-1">
+                  <div>
+                    <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                      Gap Lignes (row-gap)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="ex: 16px"
+                      value={effectiveStyle.rowGap || ''}
+                      onChange={(e) => handleStyleChange('rowGap', e.target.value)}
+                      className="w-full px-2 py-1 text-xs rounded-lg bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                      Gap Colonnes (column-gap)
+                    </label>
+                    <input
+                      type="text"
+                      placeholder="ex: 24px"
+                      value={effectiveStyle.columnGap || ''}
+                      onChange={(e) => handleStyleChange('columnGap', e.target.value)}
+                      className="w-full px-2 py-1 text-xs rounded-lg bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none"
+                    />
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* ================= PROPRIÉTÉS D'ENFANT FLEX / GRID ================= */}
+          <div className="space-y-3 pt-3 border-t border-[#E6E6EE] dark:border-[#28283C]">
+            <span className="text-[11px] font-bold uppercase tracking-wider text-[#8E8EA6] dark:text-[#75758E] block">
+              Propres à cet élément enfant (Flex / Grid Item)
+            </span>
+
+            {/* Flex Grow & Shrink */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-1">
+                  Flex Grow (Expansion)
+                </label>
+                <select
+                  value={effectiveStyle.flexGrow !== undefined ? String(effectiveStyle.flexGrow) : '0'}
+                  onChange={(e) => handleStyleChange('flexGrow', Number(e.target.value))}
+                  className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg px-2 text-[11px] text-[#1B1B2F] dark:text-[#F4F4F9]"
+                >
+                  <option value="0">0 (Taille fixe / Pas d'extension)</option>
+                  <option value="1">1 (Remplir l'espace libre ⚡)</option>
+                  <option value="2">2 (Expansion double)</option>
+                  <option value="3">3 (Expansion triple)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-1">
+                  Flex Shrink (Réduction)
+                </label>
+                <select
+                  value={effectiveStyle.flexShrink !== undefined ? String(effectiveStyle.flexShrink) : '1'}
+                  onChange={(e) => handleStyleChange('flexShrink', Number(e.target.value))}
+                  className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg px-2 text-[11px] text-[#1B1B2F] dark:text-[#F4F4F9]"
+                >
+                  <option value="1">1 (Rétrécir si besoin)</option>
+                  <option value="0">0 (Ne jamais rétrécir)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Align Self (Alignement individuel) */}
+            <div>
+              <label className="text-[11px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-1">
+                Align Self (Surpasser alignement parent)
+              </label>
+              <select
+                value={effectiveStyle.alignSelf || 'auto'}
+                onChange={(e) => handleStyleChange('alignSelf', e.target.value === 'auto' ? undefined : e.target.value)}
+                className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg px-2 text-[11px] text-[#1B1B2F] dark:text-[#F4F4F9]"
+              >
+                <option value="auto">Automatique (Hérité du parent)</option>
+                <option value="flex-start">Début / Haut (flex-start)</option>
+                <option value="center">Centre (center)</option>
+                <option value="flex-end">Fin / Bas (flex-end)</option>
+                <option value="stretch">Étirer (stretch)</option>
+              </select>
+            </div>
+
+            {/* Extension de Colonne & Ligne sur la Grille (Grid Column & Grid Row) */}
+            <div className="grid grid-cols-2 gap-2">
+              <div>
+                <label className="text-[11px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-1">
+                  Grid Column (Colonnes)
+                </label>
+                <select
+                  value={effectiveStyle.gridColumn || 'auto'}
+                  onChange={(e) => handleStyleChange('gridColumn', e.target.value === 'auto' ? undefined : e.target.value)}
+                  className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg px-2 text-[11px] text-[#1B1B2F] dark:text-[#F4F4F9]"
+                >
+                  <option value="auto">Auto (1 col)</option>
+                  <option value="span 2">Occuper 2 Colonnes</option>
+                  <option value="span 3">Occuper 3 Colonnes</option>
+                  <option value="span 4">Occuper 4 Colonnes</option>
+                  <option value="1 / -1">Pleine Largeur (1 / -1 ⚡)</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-[11px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-1">
+                  Grid Row (Lignes)
+                </label>
+                <select
+                  value={effectiveStyle.gridRow || 'auto'}
+                  onChange={(e) => handleStyleChange('gridRow', e.target.value === 'auto' ? undefined : e.target.value)}
+                  className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg px-2 text-[11px] text-[#1B1B2F] dark:text-[#F4F4F9]"
+                >
+                  <option value="auto">Auto (1 ligne)</option>
+                  <option value="span 2">Occuper 2 Lignes</option>
+                  <option value="span 3">Occuper 3 Lignes</option>
+                  <option value="span 4">Occuper 4 Lignes</option>
+                  <option value="1 / -1">Pleine Hauteur (1 / -1 ⚡)</option>
+                </select>
+              </div>
+            </div>
+
+            {/* Saisie personnalisée Grid Column / Row si besoin */}
+            <div className="grid grid-cols-2 gap-2">
+              <input
+                type="text"
+                placeholder="ex: 1 / 3 ou span 2"
+                value={effectiveStyle.gridColumn || ''}
+                onChange={(e) => handleStyleChange('gridColumn', e.target.value || undefined)}
+                className="w-full px-2 py-1 text-xs rounded-lg bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none"
+              />
+              <input
+                type="text"
+                placeholder="ex: 2 / 4 ou span 3"
+                value={effectiveStyle.gridRow || ''}
+                onChange={(e) => handleStyleChange('gridRow', e.target.value || undefined)}
+                className="w-full px-2 py-1 text-xs rounded-lg bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none"
+              />
+            </div>
+
+            {/* Ordre visuel (Order) */}
+            <div>
+              <label className="text-[11px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-1">
+                Ordre d'affichage (order)
+              </label>
+              <div className="flex items-center gap-2">
+                <input
+                  type="number"
+                  placeholder="0"
+                  value={effectiveStyle.order !== undefined ? effectiveStyle.order : ''}
+                  onChange={(e) => handleStyleChange('order', e.target.value ? Number(e.target.value) : undefined)}
+                  className="w-24 px-2 py-1 text-xs rounded-lg bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none"
+                />
+                <span className="text-[10px] text-[#8E8EA6] dark:text-[#75758E]">
+                  Ex: -1 pour placer en premier, 1 pour placer en dernier.
+                </span>
+              </div>
+            </div>
+          </div>
+        </PropSection>
+
+        {/* ================= 5. COULEURS & ARRIÈRE-PLAN (AVEC IMAGE & DÉGRADÉ) ================= */}
         <PropSection
           title="Couleurs & Arrière-plan"
           icon={<Palette className="w-3.5 h-3.5" />}
@@ -1505,11 +2394,11 @@ export function EditorPropertiesPanel() {
             </div>
           </div>
 
-          {/* Arrière-plan */}
+          {/* Couleur de fond */}
           <div>
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
-                Couleur de fond
+                Couleur de fond (Solid)
               </label>
               <InfoTooltip text="Couleur d'arrière-plan du bloc. Vous pouvez aussi choisir Transparent." />
             </div>
@@ -1528,8 +2417,163 @@ export function EditorPropertiesPanel() {
             </div>
           </div>
 
+          {/* Image de Fond CSS (Background Image) */}
+          <div className="space-y-2 pt-2 border-t border-[#E6E6EE] dark:border-[#28283C]">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-[#1B1B2F] dark:text-[#F4F4F9] flex items-center gap-1.5">
+                <ImageIcon className="w-3.5 h-3.5 text-[#5B5BF0]" />
+                <span>Image d’arrière-plan (Background Image)</span>
+              </label>
+              <InfoTooltip text="Définissez une image d'arrière-plan pour ce conteneur ou cette section." />
+            </div>
+
+            <div className="space-y-1.5">
+              <input
+                type="text"
+                placeholder="https://... (URL d'image)"
+                value={
+                  (effectiveStyle.backgroundImage || '')
+                    .replace(/^url\(['"]?/, '')
+                    .replace(/['"]?\)$/, '')
+                }
+                onChange={(e) => {
+                  const url = e.target.value.trim();
+                  if (!url) {
+                    handleRemoveStyleProp('backgroundImage');
+                  } else if (url.startsWith('linear-gradient') || url.startsWith('radial-gradient')) {
+                    handleStyleChange('backgroundImage', url);
+                  } else {
+                    handleStyleChange('backgroundImage', `url('${url}')`);
+                  }
+                }}
+                className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+              />
+
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setMediaTarget('backgroundImage');
+                    setIsMediaModalOpen(true);
+                  }}
+                  className="flex-1 text-xs flex items-center justify-center gap-1.5"
+                >
+                  <ImageIcon className="w-3.5 h-3.5 text-[#5B5BF0]" />
+                  <span>Médiathèque</span>
+                </Button>
+                {effectiveStyle.backgroundImage && (
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveStyleProp('backgroundImage')}
+                    className="px-2 py-1 text-xs text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 rounded-lg border border-red-200 dark:border-red-900"
+                    title="Effacer l'image de fond"
+                  >
+                    Effacer
+                  </button>
+                )}
+              </div>
+            </div>
+
+            {/* Dégradés CSS Prédéfinis (Linear Gradients) */}
+            <div className="space-y-1 pt-1">
+              <span className="text-[10px] font-semibold text-[#8E8EA6]">Dégradés modernes prédéfinis :</span>
+              <div className="grid grid-cols-4 gap-1">
+                {[
+                  { name: 'Indigo', val: 'linear-gradient(135deg, #5B5BF0 0%, #14B8A6 100%)' },
+                  { name: 'Sombre', val: 'linear-gradient(180deg, #1B1B2F 0%, #0F0F1A 100%)' },
+                  { name: 'Sunset', val: 'linear-gradient(135deg, #F59E0B 0%, #EF4444 100%)' },
+                  { name: 'Aurora', val: 'linear-gradient(135deg, #06B6D4 0%, #3B82F6 100%)' },
+                ].map((g) => (
+                  <button
+                    key={g.name}
+                    type="button"
+                    onClick={() => handleStyleChange('backgroundImage', g.val)}
+                    style={{ background: g.val }}
+                    className="h-6 rounded-lg text-[9px] font-bold text-white shadow-2xs hover:scale-105 transition-transform"
+                  >
+                    {g.name}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            {/* Propriétés de fond : Size, Position, Repeat & Attachment */}
+            {effectiveStyle.backgroundImage && (
+              <div className="p-2.5 bg-[#F7F7FA] dark:bg-[#202030] rounded-xl border border-[#E6E6EE] dark:border-[#28283C] space-y-2 text-xs">
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                      Taille (Size)
+                    </label>
+                    <select
+                      value={effectiveStyle.backgroundSize || 'cover'}
+                      onChange={(e) => handleStyleChange('backgroundSize', e.target.value)}
+                      className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg text-xs"
+                    >
+                      <option value="cover">Ajuster (Cover)</option>
+                      <option value="contain">Contenir (Contain)</option>
+                      <option value="auto">Taille réelle (Auto)</option>
+                      <option value="100% 100%">Étiré (100%)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                      Position
+                    </label>
+                    <select
+                      value={effectiveStyle.backgroundPosition || 'center'}
+                      onChange={(e) => handleStyleChange('backgroundPosition', e.target.value)}
+                      className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg text-xs"
+                    >
+                      <option value="center">Centre</option>
+                      <option value="top">Haut</option>
+                      <option value="bottom">Bas</option>
+                      <option value="left">Gauche</option>
+                      <option value="right">Droite</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                      Répétition (Repeat)
+                    </label>
+                    <select
+                      value={effectiveStyle.backgroundRepeat || 'no-repeat'}
+                      onChange={(e) => handleStyleChange('backgroundRepeat', e.target.value)}
+                      className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg text-xs"
+                    >
+                      <option value="no-repeat">Sans répétition</option>
+                      <option value="repeat">Répéter (Mosaïque)</option>
+                      <option value="repeat-x">Horizontale (Repeat-X)</option>
+                      <option value="repeat-y">Verticale (Repeat-Y)</option>
+                    </select>
+                  </div>
+
+                  <div>
+                    <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                      Effet Parallaxe (Attachment)
+                    </label>
+                    <select
+                      value={effectiveStyle.backgroundAttachment || 'scroll'}
+                      onChange={(e) => handleStyleChange('backgroundAttachment', e.target.value)}
+                      className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg text-xs"
+                    >
+                      <option value="scroll">Normal (Scroll)</option>
+                      <option value="fixed">✦ Parallaxe Fixe (Fixed)</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Couleur du texte */}
-          <div>
+          <div className="pt-2 border-t border-[#E6E6EE] dark:border-[#28283C]">
             <div className="flex items-center justify-between mb-1">
               <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
                 Couleur du texte
@@ -1543,7 +2587,7 @@ export function EditorPropertiesPanel() {
           </div>
         </PropSection>
 
-        {/* ================= 6. TEXTE & TYPOGRAPHIE ================= */}
+        {/* ================= 6. TEXTE & TYPOGRAPHIE (AVEC LETTER-SPACING, LINE-HEIGHT, TEXT-TRANSFORM) ================= */}
         {(element.type === 'text' || element.type === 'heading' || element.type === 'button') && (
           <PropSection
             title="Texte & Typographie"
@@ -1682,6 +2726,78 @@ export function EditorPropertiesPanel() {
                 ))}
               </div>
             </div>
+
+            {/* Options avancées de texte : Hauteur de ligne, Letter-spacing, Casse & Décoration */}
+            <div className="p-2.5 bg-[#F7F7FA] dark:bg-[#202030] rounded-xl border border-[#E6E6EE] dark:border-[#28283C] space-y-2.5">
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                    Hauteur de ligne (Line-height)
+                  </label>
+                  <select
+                    value={effectiveStyle.lineHeight || '1.5'}
+                    onChange={(e) => handleStyleChange('lineHeight', e.target.value)}
+                    className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg text-xs"
+                  >
+                    <option value="1">Serré (1.0)</option>
+                    <option value="1.2">Compact (1.2)</option>
+                    <option value="1.5">Standard (1.5)</option>
+                    <option value="1.8">Aéré (1.8)</option>
+                    <option value="2">Très aéré (2.0)</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                    Espacement lettres (Tracking)
+                  </label>
+                  <select
+                    value={effectiveStyle.letterSpacing || 'normal'}
+                    onChange={(e) => handleStyleChange('letterSpacing', e.target.value)}
+                    className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg text-xs"
+                  >
+                    <option value="-0.05em">Compact (-0.05em)</option>
+                    <option value="normal">Normal</option>
+                    <option value="0.05em">Aéré (0.05em)</option>
+                    <option value="0.1em">Espacé (0.1em)</option>
+                    <option value="0.2em">MAJUSCULES (0.2em)</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div>
+                  <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                    Casse du texte (Transform)
+                  </label>
+                  <select
+                    value={effectiveStyle.textTransform || 'none'}
+                    onChange={(e) => handleStyleChange('textTransform', e.target.value)}
+                    className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg text-xs"
+                  >
+                    <option value="none">Normal</option>
+                    <option value="uppercase">MAJUSCULES</option>
+                    <option value="lowercase">minuscules</option>
+                    <option value="capitalize">Première Lettre En Capitale</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="text-[10px] font-semibold text-[#62627A] dark:text-[#A5A5BC] block mb-0.5">
+                    Ligne de décoration
+                  </label>
+                  <select
+                    value={effectiveStyle.textDecoration || 'none'}
+                    onChange={(e) => handleStyleChange('textDecoration', e.target.value)}
+                    className="w-full h-7 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-lg text-xs"
+                  >
+                    <option value="none">Aucune</option>
+                    <option value="underline">Souligné</option>
+                    <option value="line-through">Barré</option>
+                  </select>
+                </div>
+              </div>
+            </div>
           </PropSection>
         )}
 
@@ -1692,21 +2808,26 @@ export function EditorPropertiesPanel() {
           isOpen={openSections.border}
           onToggle={() => toggleSection('border')}
         >
-          {/* Rayon des coins */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
-                Rayon des coins (Arrondi)
+          {/* Rayon des coins Global */}
+          <div className="space-y-2">
+            <div className="flex items-center justify-between">
+              <label className="text-xs font-bold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                Arrondi des coins (Border Radius)
               </label>
-              <InfoTooltip text="Rayon des coins : arrondit les angles du bloc pour un rendu plus moderne et convivial." />
+              <span className="text-xs font-mono font-bold text-[#5B5BF0] dark:text-[#7D7DF8]">
+                {effectiveStyle.borderRadius || '0px'}
+              </span>
             </div>
-            <div className="grid grid-cols-5 gap-1 mb-2">
+
+            {/* Boutons de présélection rapide */}
+            <div className="grid grid-cols-6 gap-1">
               {[
-                { label: 'Carré', val: '0px' },
-                { label: 'Doux', val: '8px' },
-                { label: 'Moderne', val: '12px' },
-                { label: 'Rond', val: '20px' },
-                { label: 'Pilule', val: '9999px' },
+                { label: '0px', val: '0px' },
+                { label: '4px', val: '4px' },
+                { label: '8px', val: '8px' },
+                { label: '12px', val: '12px' },
+                { label: '16px', val: '16px' },
+                { label: '24px', val: '24px' },
               ].map((r) => (
                 <button
                   key={r.label}
@@ -1714,7 +2835,7 @@ export function EditorPropertiesPanel() {
                   onClick={() => handleStyleChange('borderRadius', r.val)}
                   className={`py-1 text-[10px] font-semibold rounded-lg border transition-all ${
                     effectiveStyle.borderRadius === r.val
-                      ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038] dark:text-[#6B6BF7]'
+                      ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038] dark:text-[#6B6BF7] font-bold'
                       : 'border-[#E6E6EE] dark:border-[#28283C] bg-white dark:bg-[#181824] text-[#62627A] dark:text-[#A5A5BC]'
                   }`}
                 >
@@ -1722,20 +2843,108 @@ export function EditorPropertiesPanel() {
                 </button>
               ))}
             </div>
-            <input
-              type="text"
-              placeholder="ex: 12px ou 24px"
-              value={effectiveStyle.borderRadius || ''}
-              onChange={(e) => handleStyleChange('borderRadius', e.target.value)}
-              className="w-full px-2.5 py-1.5 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none"
-            />
+
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => handleStyleChange('borderRadius', '9999px')}
+                className={`px-3 py-1 text-[10px] font-bold rounded-full border transition-all ${
+                  effectiveStyle.borderRadius === '9999px'
+                    ? 'border-[#5B5BF0] bg-[#EEF0FE] text-[#5B5BF0] dark:bg-[#202038]'
+                    : 'border-[#E6E6EE] dark:border-[#28283C] bg-white dark:bg-[#181824] text-[#62627A] dark:text-[#A5A5BC]'
+                }`}
+              >
+                🔴 Pilule / Cercle (9999px)
+              </button>
+
+              <input
+                type="text"
+                placeholder="ex: 12px ou 50%"
+                value={effectiveStyle.borderRadius || ''}
+                onChange={(e) => handleStyleChange('borderRadius', e.target.value)}
+                className="flex-1 px-2.5 py-1 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+              />
+            </div>
+
+            {/* Curseur Slider interactif pour Border Radius */}
+            <div className="flex items-center gap-2 pt-1">
+              <span className="text-[10px] text-[#8E8EA6]">0</span>
+              <input
+                type="range"
+                min="0"
+                max="60"
+                step="1"
+                value={parseInt(String(effectiveStyle.borderRadius || '0'), 10) || 0}
+                onChange={(e) => handleStyleChange('borderRadius', `${e.target.value}px`)}
+                className="flex-1 accent-[#5B5BF0] h-1.5 bg-[#E6E6EE] dark:bg-[#28283C] rounded-lg cursor-pointer"
+              />
+              <span className="text-[10px] text-[#8E8EA6]">60px</span>
+            </div>
+
+            {/* Contrôle détaillé coin par coin */}
+            <details className="group pt-2 border-t border-[#E6E6EE] dark:border-[#28283C]">
+              <summary className="text-[11px] font-bold text-[#62627A] dark:text-[#A5A5BC] cursor-pointer hover:text-[#5B5BF0] list-none flex items-center justify-between">
+                <span>✦ Arrondis par coin individuel</span>
+                <span className="text-[10px]">▼</span>
+              </summary>
+              <div className="grid grid-cols-2 gap-2 pt-2 text-xs">
+                <div>
+                  <label className="text-[10px] font-semibold text-[#8E8EA6] block mb-0.5">
+                    Haut-Gauche (TL)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="0px"
+                    value={effectiveStyle.borderTopLeftRadius || ''}
+                    onChange={(e) => handleStyleChange('borderTopLeftRadius', e.target.value)}
+                    className="w-full px-2 py-1 text-xs rounded-lg bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-[#8E8EA6] block mb-0.5">
+                    Haut-Droit (TR)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="0px"
+                    value={effectiveStyle.borderTopRightRadius || ''}
+                    onChange={(e) => handleStyleChange('borderTopRightRadius', e.target.value)}
+                    className="w-full px-2 py-1 text-xs rounded-lg bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-[#8E8EA6] block mb-0.5">
+                    Bas-Gauche (BL)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="0px"
+                    value={effectiveStyle.borderBottomLeftRadius || ''}
+                    onChange={(e) => handleStyleChange('borderBottomLeftRadius', e.target.value)}
+                    className="w-full px-2 py-1 text-xs rounded-lg bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C]"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] font-semibold text-[#8E8EA6] block mb-0.5">
+                    Bas-Droit (BR)
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="0px"
+                    value={effectiveStyle.borderBottomRightRadius || ''}
+                    onChange={(e) => handleStyleChange('borderBottomRightRadius', e.target.value)}
+                    className="w-full px-2 py-1 text-xs rounded-lg bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C]"
+                  />
+                </div>
+              </div>
+            </details>
           </div>
 
           {/* Bordure : Épaisseur, style et couleur */}
-          <div>
+          <div className="pt-2 border-t border-[#E6E6EE] dark:border-[#28283C] space-y-2">
             <div className="flex items-center justify-between mb-1">
-              <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
-                Bordure & Contour
+              <label className="text-xs font-bold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                Style de bordure & Contour
               </label>
               <InfoTooltip text="Ajoute une ligne de contour solide ou pointillée autour de l'élément." />
             </div>
@@ -1749,11 +2958,12 @@ export function EditorPropertiesPanel() {
                 <option value="solid">Ligne solide</option>
                 <option value="dashed">Tirets</option>
                 <option value="dotted">Pointillés</option>
+                <option value="double">Ligne double</option>
               </select>
 
               <input
                 type="text"
-                placeholder="Épaisseur (ex: 1px)"
+                placeholder="Épaisseur (ex: 2px)"
                 value={effectiveStyle.borderWidth || ''}
                 onChange={(e) => handleStyleChange('borderWidth', e.target.value)}
                 className="px-2.5 py-1 text-xs rounded-xl bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none"
@@ -1811,13 +3021,77 @@ export function EditorPropertiesPanel() {
           </div>
         </PropSection>
 
-        {/* ================= 9. EFFETS & VERRE DÉPOLI ================= */}
+        {/* ================= 9. EFFETS, CURSEUR, ASPECT RATIO & FILTRES CSS ================= */}
         <PropSection
-          title="Effets & Transparence"
+          title="Effets, Curseur & Filtres CSS"
           icon={<Sparkles className="w-3.5 h-3.5" />}
           isOpen={openSections.effects}
           onToggle={() => toggleSection('effects')}
         >
+          {/* Ratio d'aspect (Aspect Ratio) */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                Ratio de proportion (Aspect Ratio)
+              </label>
+              <InfoTooltip text="Verrouille les proportions géométriques du bloc (1/1 pour carré, 16/9 pour vidéo, etc.)." />
+            </div>
+            <select
+              value={effectiveStyle.aspectRatio || 'auto'}
+              onChange={(e) => handleStyleChange('aspectRatio', e.target.value)}
+              className="w-full h-8 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-xl px-2.5 text-xs text-[#1B1B2F] dark:text-[#F4F4F9]"
+            >
+              <option value="auto">Automatique (Libre)</option>
+              <option value="1 / 1">1:1 (Carré parfait)</option>
+              <option value="16 / 9">16:9 (Format Vidéo HD)</option>
+              <option value="4 / 3">4:3 (Photo classique)</option>
+              <option value="21 / 9">21:9 (Cinéma ultra-large)</option>
+              <option value="9 / 16">9:16 (Format Story / Mobile)</option>
+            </select>
+          </div>
+
+          {/* Débordement (Overflow) */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                Gestion du débordement (Overflow)
+              </label>
+              <InfoTooltip text="Masqué (hidden) pour couper ce qui dépasse, ou Défilement (auto) pour afficher un ascenseur interne." />
+            </div>
+            <select
+              value={effectiveStyle.overflow || 'visible'}
+              onChange={(e) => handleStyleChange('overflow', e.target.value)}
+              className="w-full h-8 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-xl px-2.5 text-xs text-[#1B1B2F] dark:text-[#F4F4F9]"
+            >
+              <option value="visible">Visible (Laisse dépasser)</option>
+              <option value="hidden">Masqué (Cogne aux bords / Clip)</option>
+              <option value="auto">Défilement auto (Scrollbar)</option>
+              <option value="scroll">Défilement forcé</option>
+            </select>
+          </div>
+
+          {/* Curseur au survol (Cursor) */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                Curseur de la souris (Cursor)
+              </label>
+              <InfoTooltip text="Pointeur (Main), Texte (I-beam), Interdit, Zoom, Grab, etc." />
+            </div>
+            <select
+              value={effectiveStyle.cursor || 'default'}
+              onChange={(e) => handleStyleChange('cursor', e.target.value)}
+              className="w-full h-8 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-xl px-2.5 text-xs text-[#1B1B2F] dark:text-[#F4F4F9]"
+            >
+              <option value="default">Par défaut (Flèche)</option>
+              <option value="pointer">👆 Main cliquable (Pointer)</option>
+              <option value="text">✍️ Sélection de texte (Text)</option>
+              <option value="not-allowed">🚫 Interdit (Not-allowed)</option>
+              <option value="grab">✋ Main ouverte (Grab)</option>
+              <option value="zoom-in">🔍 Loupe Zoom (Zoom-in)</option>
+            </select>
+          </div>
+
           {/* Opacité */}
           <div>
             <div className="flex items-center justify-between mb-1">
@@ -1840,6 +3114,28 @@ export function EditorPropertiesPanel() {
                 {Math.round((effectiveStyle.opacity !== undefined ? Number(effectiveStyle.opacity) : 1) * 100)}%
               </span>
             </div>
+          </div>
+
+          {/* Filtres visuels CSS (Filters) */}
+          <div>
+            <div className="flex items-center justify-between mb-1">
+              <label className="text-xs font-semibold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                Filtre visuel (Filter)
+              </label>
+              <InfoTooltip text="Filtre visuel direct : Flou, Niveaux de gris, Contraste, Sépia, etc." />
+            </div>
+            <select
+              value={effectiveStyle.filter || 'none'}
+              onChange={(e) => handleStyleChange('filter', e.target.value)}
+              className="w-full h-8 bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-xl px-2.5 text-xs text-[#1B1B2F] dark:text-[#F4F4F9]"
+            >
+              <option value="none">Aucun filtre</option>
+              <option value="grayscale(100%)">Noir & Blanc (Grayscale 100%)</option>
+              <option value="blur(4px)">Flou artistique (Blur 4px)</option>
+              <option value="brightness(125%)">Luminosité boostée (+25%)</option>
+              <option value="contrast(130%)">Haute Contraste (130%)</option>
+              <option value="sepia(80%)">Rétro Sépia (80%)</option>
+            </select>
           </div>
 
           {/* Verre dépoli (Backdrop blur) */}
@@ -2043,12 +3339,16 @@ export function EditorPropertiesPanel() {
         isOpen={isMediaModalOpen}
         onClose={() => setIsMediaModalOpen(false)}
         onSelect={(media) => {
-          handlePropChange('src', media.url);
-          if (media.alt && !element.props?.alt) {
-            handlePropChange('alt', media.alt);
+          if (mediaTarget === 'backgroundImage') {
+            handleStyleChange('backgroundImage', `url('${media.url}')`);
+          } else {
+            handlePropChange('src', media.url);
+            if (media.alt && !element.props?.alt) {
+              handlePropChange('alt', media.alt);
+            }
           }
         }}
-        title="Sélectionner une image pour cet élément"
+        title={mediaTarget === 'backgroundImage' ? "Sélectionner une image d'arrière-plan" : "Sélectionner une image pour cet élément"}
       />
     </aside>
   );

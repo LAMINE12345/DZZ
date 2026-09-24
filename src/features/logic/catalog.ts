@@ -1810,6 +1810,441 @@ export const LOGIC_CATALOG: LogicNodeDefinition[] = [
     ],
     defaultData: { label: 'Groupe logique', groupTitle: 'Composant logique', width: 400, height: 300 },
   },
+
+  // ==========================================
+  // 8. LOGIQUE & EXPRESSIONS JAVASCRIPT AVANCÉES
+  // ==========================================
+  {
+    type: 'js_script_custom',
+    category: 'logic',
+    name: 'Script JavaScript Personnalisé',
+    description: 'Exécute un extrait de code JavaScript personnalisé avec entrées et valeurs de retour.',
+    iconName: 'Terminal',
+    inputs: [
+      { id: 'flow_in', name: 'Entrée', type: 'flow', label: 'Exécuter' },
+      { id: 'input_a', name: 'Entrée A', type: 'data', dataType: 'any', label: 'Variable inputA' },
+      { id: 'input_b', name: 'Entrée B', type: 'data', dataType: 'any', label: 'Variable inputB' },
+    ],
+    outputs: [
+      { id: 'flow_out', name: 'Sortie', type: 'flow', label: 'Succès' },
+      { id: 'result_out', name: 'Résultat', type: 'data', dataType: 'any', label: 'Valeur retournée' },
+      { id: 'error_out', name: 'Erreur', type: 'data', dataType: 'text', label: 'Message d’erreur' },
+    ],
+    fields: [
+      {
+        key: 'code',
+        label: 'Code JavaScript (Utilisez return ...)',
+        type: 'code',
+        rows: 4,
+        defaultValue: '// Ex: return (input_a || 0) * 2 + String(input_b || "");\nreturn (input_a || 0) + (input_b || 0);',
+      },
+    ],
+    defaultData: { label: 'Script JS', code: 'return (input_a || 0) + (input_b || 0);' },
+  },
+  {
+    type: 'js_array_filter',
+    category: 'logic',
+    name: 'Tableau JS : Filtrer (Array.filter)',
+    description: 'Filtre les éléments d’une liste ou d’un tableau d’objets selon une condition JS.',
+    iconName: 'ListOrdered',
+    inputs: [
+      { id: 'list_in', name: 'Tableau', type: 'data', dataType: 'list', label: 'Liste source' },
+    ],
+    outputs: [
+      { id: 'filtered_list', name: 'Tableau filtré', type: 'data', dataType: 'list', label: 'Éléments conservés' },
+      { id: 'count_out', name: 'Nombre', type: 'data', dataType: 'number', label: 'Taille' },
+    ],
+    fields: [
+      {
+        key: 'predicateCode',
+        label: 'Condition de filtre (Ex: item.prix > 10)',
+        type: 'code',
+        rows: 2,
+        defaultValue: 'item => Boolean(item)',
+      },
+    ],
+    defaultData: { label: 'Array.filter()', predicateCode: 'item => Boolean(item)' },
+  },
+  {
+    type: 'js_array_map',
+    category: 'logic',
+    name: 'Tableau JS : Transformer (Array.map)',
+    description: 'Transforme chaque élément d’un tableau grâce à une fonction JavaScript.',
+    iconName: 'ListOrdered',
+    inputs: [
+      { id: 'list_in', name: 'Tableau', type: 'data', dataType: 'list', label: 'Liste source' },
+    ],
+    outputs: [
+      { id: 'mapped_list', name: 'Tableau transformé', type: 'data', dataType: 'list', label: 'Nouveau tableau' },
+    ],
+    fields: [
+      {
+        key: 'mapCode',
+        label: 'Fonction de transformation (Ex: item => item.nom.toUpperCase())',
+        type: 'code',
+        rows: 2,
+        defaultValue: 'item => typeof item === "object" ? item.title || item.name || item : String(item)',
+      },
+    ],
+    defaultData: { label: 'Array.map()', mapCode: 'item => String(item)' },
+  },
+  {
+    type: 'js_array_reduce',
+    category: 'logic',
+    name: 'Tableau JS : Accumuler / Somme (Array.reduce)',
+    description: 'Calcule une somme, total ou objet accumulé à partir d’un tableau.',
+    iconName: 'Calculator',
+    inputs: [
+      { id: 'list_in', name: 'Tableau', type: 'data', dataType: 'list', label: 'Liste source' },
+      { id: 'initial_val', name: 'Valeur initiale', type: 'data', dataType: 'any', label: 'Départ (0, "")' },
+    ],
+    outputs: [
+      { id: 'accumulator_out', name: 'Résultat accumulé', type: 'data', dataType: 'any', label: 'Total final' },
+    ],
+    fields: [
+      {
+        key: 'reducerCode',
+        label: 'Code d’accumulation (Ex: (acc, item) => acc + (item.prix || 0))',
+        type: 'code',
+        rows: 2,
+        defaultValue: '(acc, item) => acc + (Number(item) || 0)',
+      },
+    ],
+    defaultData: { label: 'Array.reduce()', reducerCode: '(acc, item) => acc + (Number(item) || 0)' },
+  },
+  {
+    type: 'js_array_methods',
+    category: 'tool',
+    name: 'Tableau JS : Opérations usuelles',
+    description: 'Inversion, découpe (slice), recherche (find/includes), assemblage (join), tri (sort).',
+    iconName: 'ListOrdered',
+    inputs: [
+      { id: 'list_in', name: 'Tableau', type: 'data', dataType: 'list', label: 'Liste d’entrée' },
+      { id: 'param_in', name: 'Paramètre', type: 'data', dataType: 'any', label: 'Séparateur / Index' },
+    ],
+    outputs: [
+      { id: 'result_out', name: 'Résultat', type: 'data', dataType: 'any', label: 'Résultat' },
+      { id: 'length_out', name: 'Longueur', type: 'data', dataType: 'number', label: 'Taille du tableau' },
+    ],
+    fields: [
+      {
+        key: 'operation',
+        label: 'Méthode JS',
+        type: 'select',
+        options: [
+          { label: 'Assembler en texte (Array.join)', value: 'join' },
+          { label: 'Inverser le tableau (Array.reverse)', value: 'reverse' },
+          { label: 'Extraire une portion (Array.slice)', value: 'slice' },
+          { label: 'Contient l’élément (Array.includes)', value: 'includes' },
+          { label: 'Trier par ordre alphabétique (Array.sort)', value: 'sort' },
+          { label: 'Longueur (Array.length)', value: 'length' },
+        ],
+        defaultValue: 'join',
+      },
+      {
+        key: 'joinSeparator',
+        label: 'Séparateur (si join)',
+        type: 'text',
+        defaultValue: ', ',
+      },
+    ],
+    defaultData: { label: 'Tableau Opération', operation: 'join', joinSeparator: ', ' },
+  },
+  {
+    type: 'js_json_parse',
+    category: 'tool',
+    name: 'JSON.parse() (Texte → Objet)',
+    description: 'Convertit une chaîne de caractères JSON structurée en objet JavaScript manipulable.',
+    iconName: 'Binary',
+    inputs: [
+      { id: 'json_str', name: 'Texte JSON', type: 'data', dataType: 'text', label: 'Chaîne JSON' },
+    ],
+    outputs: [
+      { id: 'object_out', name: 'Objet JS', type: 'data', dataType: 'any', label: 'Objet ou Tableau' },
+      { id: 'is_valid', name: 'Valide ?', type: 'data', dataType: 'boolean', label: 'Est JSON Valide' },
+    ],
+    fields: [],
+    defaultData: { label: 'JSON.parse()' },
+  },
+  {
+    type: 'js_json_stringify',
+    category: 'tool',
+    name: 'JSON.stringify() (Objet → Texte)',
+    description: 'Convertit un objet ou tableau JavaScript en chaîne de caractères JSON.',
+    iconName: 'Binary',
+    inputs: [
+      { id: 'object_in', name: 'Objet JS', type: 'data', dataType: 'any', label: 'Objet / Donnée' },
+    ],
+    outputs: [
+      { id: 'json_str_out', name: 'Texte JSON', type: 'data', dataType: 'text', label: 'JSON formaté' },
+    ],
+    fields: [
+      {
+        key: 'pretty',
+        label: 'Indenter le JSON (Pretty Print)',
+        type: 'boolean',
+        defaultValue: true,
+      },
+    ],
+    defaultData: { label: 'JSON.stringify()', pretty: true },
+  },
+  {
+    type: 'js_object_prop',
+    category: 'tool',
+    name: 'Objet JS : Lire / Écrire Propriété',
+    description: 'Accède ou modifie une propriété dynamique dans un objet JavaScript (obj[key]).',
+    iconName: 'Layers2',
+    inputs: [
+      { id: 'object_in', name: 'Objet', type: 'data', dataType: 'any', label: 'Objet source' },
+      { id: 'prop_key_in', name: 'Clé', type: 'data', dataType: 'text', label: 'Nom de propriété' },
+      { id: 'value_to_set', name: 'Nouvelle valeur', type: 'data', dataType: 'any', label: 'Valeur à écrire (si modification)' },
+    ],
+    outputs: [
+      { id: 'value_out', name: 'Valeur lue', type: 'data', dataType: 'any', label: 'Contenu propriété' },
+      { id: 'updated_obj_out', name: 'Objet modifié', type: 'data', dataType: 'any', label: 'Objet mis à jour' },
+    ],
+    fields: [
+      {
+        key: 'propertyName',
+        label: 'Nom de la propriété (Clé)',
+        type: 'text',
+        placeholder: 'Ex: user.name ou id',
+        defaultValue: 'id',
+      },
+    ],
+    defaultData: { label: 'Lire / Écrire Propriété', propertyName: 'id' },
+  },
+  {
+    type: 'js_object_keys_values',
+    category: 'tool',
+    name: 'Objet JS : Keys / Values / Entries',
+    description: 'Extrait la liste des clés (Object.keys) ou valeurs (Object.values) d’un objet.',
+    iconName: 'ListOrdered',
+    inputs: [
+      { id: 'object_in', name: 'Objet', type: 'data', dataType: 'any', label: 'Objet source' },
+    ],
+    outputs: [
+      { id: 'keys_list', name: 'Clés (Keys)', type: 'data', dataType: 'list', label: 'Noms des clés' },
+      { id: 'values_list', name: 'Valeurs (Values)', type: 'data', dataType: 'list', label: 'Liste des valeurs' },
+    ],
+    fields: [],
+    defaultData: { label: 'Object.keys / values' },
+  },
+  {
+    type: 'js_string_advanced',
+    category: 'tool',
+    name: 'Texte JS : String Replace / Split / Match',
+    description: 'Remplacer (Replace), découper (Split), extraire (Substring) du texte avec la puissance de JS.',
+    iconName: 'Pilcrow',
+    inputs: [
+      { id: 'text_in', name: 'Texte source', type: 'data', dataType: 'text', label: 'Texte initial' },
+      { id: 'param1', name: 'Param 1', type: 'data', dataType: 'text', label: 'Recherche / Délimiteur' },
+      { id: 'param2', name: 'Param 2', type: 'data', dataType: 'text', label: 'Remplacement' },
+    ],
+    outputs: [
+      { id: 'text_out', name: 'Texte résultat', type: 'data', dataType: 'text', label: 'Texte modifié' },
+      { id: 'list_out', name: 'Liste découpe', type: 'data', dataType: 'list', label: 'Tableau (si split)' },
+    ],
+    fields: [
+      {
+        key: 'operation',
+        label: 'Opération JS',
+        type: 'select',
+        options: [
+          { label: 'Remplacer (String.replace)', value: 'replace' },
+          { label: 'Remplacer tout (String.replaceAll)', value: 'replaceAll' },
+          { label: 'Découper en tableau (String.split)', value: 'split' },
+          { label: 'Contient sous-chaîne (String.includes)', value: 'includes' },
+          { label: 'Commence par (String.startsWith)', value: 'startsWith' },
+          { label: 'Sous-chaîne (String.substring)', value: 'substring' },
+        ],
+        defaultValue: 'replace',
+      },
+    ],
+    defaultData: { label: 'Texte JS Avancé', operation: 'replace' },
+  },
+  {
+    type: 'js_regex',
+    category: 'logic',
+    name: 'Expression Régulière (RegExp)',
+    description: 'Valide un format (email, téléphone, code postal) ou extrait des correspondances Regex.',
+    iconName: 'Terminal',
+    inputs: [
+      { id: 'text_in', name: 'Texte à tester', type: 'data', dataType: 'text', label: 'Texte à analyser' },
+    ],
+    outputs: [
+      { id: 'is_match', name: 'Est conforme ?', type: 'data', dataType: 'boolean', label: 'Vrai ou Faux' },
+      { id: 'matches_list', name: 'Correspondances', type: 'data', dataType: 'list', label: 'Captures Regex' },
+    ],
+    fields: [
+      {
+        key: 'pattern',
+        label: 'Motif Regex (Ex: ^[a-zA-Z0-9+_.-]+@[a-zA-Z0-9.-]+$)',
+        type: 'text',
+        defaultValue: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$',
+      },
+      {
+        key: 'flags',
+        label: 'Options (flags: i, g, m)',
+        type: 'text',
+        defaultValue: 'i',
+      },
+    ],
+    defaultData: { label: 'Regex Email', pattern: '^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$', flags: 'i' },
+  },
+  {
+    type: 'js_type_cast',
+    category: 'tool',
+    name: 'Conversion de Type JS (Cast)',
+    description: 'Convertit explicitement entre String, Number, Boolean, parseInt, parseFloat.',
+    iconName: 'Binary',
+    inputs: [
+      { id: 'val_in', name: 'Valeur', type: 'data', dataType: 'any', label: 'Donnée source' },
+    ],
+    outputs: [
+      { id: 'val_out', name: 'Valeur convertie', type: 'data', dataType: 'any', label: 'Résultat converti' },
+      { id: 'type_name', name: 'Type JS (typeof)', type: 'data', dataType: 'text', label: 'Nom du type JS' },
+    ],
+    fields: [
+      {
+        key: 'targetType',
+        label: 'Type cible',
+        type: 'select',
+        options: [
+          { label: 'Nombre entier (parseInt)', value: 'parseInt' },
+          { label: 'Nombre décimal (parseFloat)', value: 'parseFloat' },
+          { label: 'Texte (String)', value: 'String' },
+          { label: 'Booléen (Boolean)', value: 'Boolean' },
+          { label: 'Tableau (Array.from)', value: 'Array' },
+        ],
+        defaultValue: 'parseInt',
+      },
+    ],
+    defaultData: { label: 'Conversion Type JS', targetType: 'parseInt' },
+  },
+  {
+    type: 'js_ternary',
+    category: 'logic',
+    name: 'Opérateur Ternaire JS ( a ? b : c )',
+    description: 'Renvoie la valeur B si la condition est vraie, sinon la valeur C.',
+    iconName: 'GitBranch',
+    inputs: [
+      { id: 'condition_in', name: 'Condition', type: 'data', dataType: 'boolean', label: 'Vrai / Faux' },
+      { id: 'true_val', name: 'Si Vrai', type: 'data', dataType: 'any', label: 'Valeur VRAIE' },
+      { id: 'false_val', name: 'Si Faux', type: 'data', dataType: 'any', label: 'Valeur FAUSSE' },
+    ],
+    outputs: [
+      { id: 'result_out', name: 'Résultat', type: 'data', dataType: 'any', label: 'Valeur choisie' },
+    ],
+    fields: [],
+    defaultData: { label: 'Ternaire (a ? b : c)' },
+  },
+  {
+    type: 'js_try_catch',
+    category: 'logic',
+    name: 'Try ... Catch JS (Gestion des Erreurs)',
+    description: 'Tente d’exécuter une sous-partie. En cas de bogue ou d’erreur, bifurque vers la branche Catch sans faire planter l’application.',
+    iconName: 'Terminal',
+    inputs: [
+      { id: 'flow_in', name: 'Entrée', type: 'flow', label: 'Exécuter' },
+    ],
+    outputs: [
+      { id: 'flow_try', name: 'Bloc Try', type: 'flow', label: 'Flux normal' },
+      { id: 'flow_catch', name: 'Bloc Catch', type: 'flow', label: 'Si Erreur' },
+      { id: 'error_msg', name: 'Détail Erreur', type: 'data', dataType: 'text', label: 'Code d’erreur' },
+    ],
+    fields: [],
+    defaultData: { label: 'Try ... Catch JS' },
+  },
+  {
+    type: 'js_console_log',
+    category: 'tool',
+    name: 'Console JS (console.log / warn / error / table)',
+    description: 'Affiche des données détaillées dans les outils de développement du navigateur F12.',
+    iconName: 'Terminal',
+    inputs: [
+      { id: 'flow_in', name: 'Entrée', type: 'flow', label: 'Exécuter' },
+      { id: 'data_in', name: 'Donnée', type: 'data', dataType: 'any', label: 'Valeur / Objet à afficher' },
+    ],
+    outputs: [
+      { id: 'flow_out', name: 'Sortie', type: 'flow', label: 'Ensuite' },
+    ],
+    fields: [
+      {
+        key: 'level',
+        label: 'Type de console',
+        type: 'select',
+        options: [
+          { label: 'console.log (Message standard)', value: 'log' },
+          { label: 'console.warn (Avertissement jaune)', value: 'warn' },
+          { label: 'console.error (Erreur rouge)', value: 'error' },
+          { label: 'console.table (Tableau structuré)', value: 'table' },
+        ],
+        defaultValue: 'log',
+      },
+    ],
+    defaultData: { label: 'Console JS', level: 'log' },
+  },
+  {
+    type: 'js_dom_class_toggle',
+    category: 'action',
+    name: 'DOM : Classe CSS (classList add / remove / toggle)',
+    description: 'Ajoute, supprime ou bascule une classe CSS sur un élément HTML de la page.',
+    iconName: 'Palette',
+    inputs: [
+      { id: 'flow_in', name: 'Entrée', type: 'flow', label: 'Exécuter' },
+    ],
+    outputs: [
+      { id: 'flow_out', name: 'Sortie', type: 'flow', label: 'Ensuite' },
+    ],
+    fields: [
+      {
+        key: 'targetElementId',
+        label: 'Élément HTML cible',
+        type: 'elementPicker',
+      },
+      {
+        key: 'className',
+        label: 'Nom de la classe CSS',
+        type: 'text',
+        placeholder: 'Ex: active, bg-blue-500, hidden',
+        defaultValue: 'active',
+      },
+      {
+        key: 'action',
+        label: 'Action classList',
+        type: 'select',
+        options: [
+          { label: 'Alterner (Toggle)', value: 'toggle' },
+          { label: 'Ajouter (Add)', value: 'add' },
+          { label: 'Retirer (Remove)', value: 'remove' },
+        ],
+        defaultValue: 'toggle',
+      },
+    ],
+    defaultData: { label: 'ClassList CSS', targetElementId: '', className: 'active', action: 'toggle' },
+  },
+  {
+    type: 'js_url_query_params',
+    category: 'data',
+    name: 'URL Query Params (URLSearchParams)',
+    description: 'Lit les paramètres d’URL (ex: ?promo=SUMMER2025 ou ?id=42).',
+    iconName: 'ExternalLink',
+    inputs: [],
+    outputs: [
+      { id: 'param_value', name: 'Valeur du paramètre', type: 'data', dataType: 'text', label: 'Valeur lue' },
+      { id: 'has_param', name: 'Existe ?', type: 'data', dataType: 'boolean', label: 'Paramètre présent' },
+    ],
+    fields: [
+      {
+        key: 'paramKey',
+        label: 'Nom du paramètre URL (?clé=...)',
+        type: 'text',
+        defaultValue: 'ref',
+      },
+    ],
+    defaultData: { label: 'URL Query Param', paramKey: 'ref' },
+  },
 ];
 
 export function getNodeDefinition(type: string): LogicNodeDefinition | undefined {

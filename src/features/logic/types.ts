@@ -18,11 +18,12 @@ export interface PortDefinition {
 export interface LogicFieldDef {
   key: string;
   label: string;
-  type: 'text' | 'number' | 'boolean' | 'select' | 'elementPicker' | 'pagePicker' | 'memoryPicker' | 'collectionPicker' | 'color';
+  type: 'text' | 'number' | 'boolean' | 'select' | 'elementPicker' | 'pagePicker' | 'memoryPicker' | 'collectionPicker' | 'color' | 'textarea' | 'code';
   options?: Array<{ label: string; value: string | number | boolean }>;
   placeholder?: string;
   tooltip?: string;
   defaultValue?: any;
+  rows?: number;
 }
 
 export interface LogicNodeDefinition {

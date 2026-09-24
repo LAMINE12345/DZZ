@@ -318,6 +318,23 @@ export function BaseNode({ id, data, type, selected }: NodeProps) {
                 );
               }
 
+              if (field.type === 'textarea' || field.type === 'code') {
+                return (
+                  <div key={field.key} className="space-y-1">
+                    <label className="text-[9px] font-mono font-bold uppercase tracking-widest text-neutral-500 dark:text-neutral-400">
+                      {field.label}
+                    </label>
+                    <textarea
+                      rows={field.rows || 3}
+                      value={val !== undefined ? val : ''}
+                      placeholder={field.placeholder}
+                      onChange={(e) => handleFieldChange(field.key, e.target.value)}
+                      className="w-full px-2 py-1.5 rounded-xs border border-[#E2E4E8] dark:border-[#26272D] bg-[#1A1A24] text-[#818CF8] font-mono text-[11px] outline-none focus:border-neutral-900 dark:focus:border-white resize-y"
+                    />
+                  </div>
+                );
+              }
+
               if (field.type === 'boolean') {
                 return (
                   <label key={field.key} className="flex items-center gap-2 cursor-pointer py-1">

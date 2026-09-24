@@ -9,6 +9,7 @@ import {
   ElementTypeDef,
 } from './editorElements';
 import { Element, Page, ProjectTheme } from '@/src/core/types';
+import { findElementInTree } from '@/src/core/elementTreeUtils';
 import {
   Layers,
   LayoutGrid,
@@ -59,6 +60,21 @@ import {
   Table as TableIcon,
   Volume2,
   Globe,
+  Compass,
+  TrendingUp,
+  AlertCircle,
+  Images,
+  ToggleRight,
+  SlidersHorizontal,
+  Percent,
+  CircleDot,
+  CornerDownRight,
+  FolderInput,
+  FolderOutput,
+  Move,
+  Network,
+  ListTree,
+  ArrowRightLeft,
 } from 'lucide-react';
 import { Button, Input, ColorPicker } from '@/src/shared/ui';
 import { HEADING_FONTS, BODY_FONTS, THEME_PRESETS } from '@/src/core/themePresets';
@@ -66,6 +82,7 @@ import { t } from '@/src/i18n';
 
 // Résolution dynamique des icônes Lucide
 const iconMap: Record<string, React.ReactNode> = {
+  Compass: <Compass className="w-4 h-4" />,
   LayoutTemplate: <LayoutTemplate className="w-4 h-4" />,
   Columns3: <Columns3 className="w-4 h-4" />,
   Box: <Box className="w-4 h-4" />,
@@ -75,6 +92,8 @@ const iconMap: Record<string, React.ReactNode> = {
   Sparkles: <Sparkles className="w-4 h-4" />,
   Image: <ImageIcon className="w-4 h-4" />,
   Video: <Video className="w-4 h-4" />,
+  Youtube: <Video className="w-4 h-4" />,
+  Images: <Images className="w-4 h-4" />,
   Square: <Square className="w-4 h-4" />,
   FileText: <FileText className="w-4 h-4" />,
   FormInput: <FormInput className="w-4 h-4" />,
@@ -90,6 +109,14 @@ const iconMap: Record<string, React.ReactNode> = {
   ChevronDown: <ChevronDown className="w-4 h-4" />,
   Volume2: <Volume2 className="w-4 h-4" />,
   Globe: <Globe className="w-4 h-4" />,
+  Layers: <Layers className="w-4 h-4" />,
+  Star: <Star className="w-4 h-4" />,
+  TrendingUp: <TrendingUp className="w-4 h-4" />,
+  AlertCircle: <AlertCircle className="w-4 h-4" />,
+  ToggleRight: <ToggleRight className="w-4 h-4" />,
+  SlidersHorizontal: <SlidersHorizontal className="w-4 h-4" />,
+  Percent: <Percent className="w-4 h-4" />,
+  CircleDot: <CircleDot className="w-4 h-4" />,
 };
 
 export function EditorLeftPanel() {
@@ -114,6 +141,7 @@ export function EditorLeftPanel() {
     lockElement,
     hideElement,
     deleteElement,
+    duplicateElement,
     renameElement,
     moveElementOrder,
     reorderElementInTree,
@@ -122,6 +150,13 @@ export function EditorLeftPanel() {
 
   const [searchQuery, setSearchQuery] = React.useState('');
   const [customImageUrl, setCustomImageUrl] = React.useState('');
+
+  // Filtres et contrôles de l'arborescence (Calques & Apparentement)
+  const [layerSearchQuery, setLayerSearchQuery] = React.useState('');
+  const [layerCategoryFilter, setLayerCategoryFilter] = React.useState<'all' | 'text' | 'media' | 'containers' | 'forms'>('all');
+  const [forceExpandState, setForceExpandState] = React.useState<boolean | null>(null);
+  const [reparentingElementId, setReparentingElementId] = React.useState<string | null>(null);
+  const [draggedLayerId, setDraggedLayerId] = React.useState<string | null>(null);
 
   const activePage = project.pages.find((p) => p.id === activePageId) || project.pages[0];
 
@@ -500,19 +535,93 @@ export function EditorLeftPanel() {
           </div>
         )}
 
-        {/* ================= ONGLET 4 : CALQUES ================= */}
+        {/* ================= ONGLET 4 : CALQUES (ARBORESCENCE) ================= */}
         {activeLeftTab === 'layers' && (
           <div className="space-y-3">
+            {/* Entête & Statut de l'Arborescence */}
             <div className="flex items-center justify-between px-1">
-              <span className="text-xs font-bold text-[#1B1B2F] dark:text-[#F4F4F9]">
-                Arborescence : « {activePage?.name} »
-              </span>
-              <span className="text-[10px] text-[#8E8EA6] dark:text-[#75758E]">
-                Double-clic pour renommer
-              </span>
+              <div>
+                <span className="text-xs font-bold text-[#1B1B2F] dark:text-[#F4F4F9] block">
+                  Arborescence « {activePage?.name} »
+                </span>
+                <span className="text-[10px] text-[#8E8EA6] dark:text-[#75758E]">
+                  {countTotalElements(activePage?.root)} élément(s) au total
+                </span>
+              </div>
+
+              {/* Raccourcis Globaux Déplier/Replier */}
+              <div className="flex items-center gap-1">
+                <button
+                  type="button"
+                  onClick={() => setForceExpandState(true)}
+                  className="px-2 py-1 text-[10px] font-semibold rounded bg-[#F1F1F6] dark:bg-[#222232] text-[#62627A] dark:text-[#A5A5BC] hover:bg-[#EEF0FE] hover:text-[#5B5BF0] transition-colors"
+                  title="Tout déplier dans l'arborescence"
+                >
+                  Tout déplier
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setForceExpandState(false)}
+                  className="px-2 py-1 text-[10px] font-semibold rounded bg-[#F1F1F6] dark:bg-[#222232] text-[#62627A] dark:text-[#A5A5BC] hover:bg-[#EEF0FE] hover:text-[#5B5BF0] transition-colors"
+                  title="Tout replier dans l'arborescence"
+                >
+                  Tout replier
+                </button>
+              </div>
             </div>
 
-            <div className="space-y-1">
+            {/* Barre de Recherche dans l'Arborescence */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-2.5 top-2.5 text-[#8E8EA6] dark:text-[#75758E]" />
+              <input
+                type="text"
+                placeholder="Filtrer par nom, type ou texte..."
+                value={layerSearchQuery}
+                onChange={(e) => setLayerSearchQuery(e.target.value)}
+                className="w-full pl-8 pr-7 py-1.5 text-xs bg-white dark:bg-[#181824] rounded-xl border border-[#E6E6EE] dark:border-[#28283C] text-[#1B1B2F] dark:text-[#F4F4F9] outline-none focus:border-[#5B5BF0]"
+              />
+              {layerSearchQuery && (
+                <button
+                  type="button"
+                  onClick={() => setLayerSearchQuery('')}
+                  className="absolute right-2 top-2 text-xs text-[#8E8EA6] hover:text-[#1B1B2F] dark:hover:text-white"
+                >
+                  ✕
+                </button>
+              )}
+            </div>
+
+            {/* Pills de Filtrage par Catégorie */}
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none text-[10px]">
+              {[
+                { id: 'all', label: 'Tous' },
+                { id: 'text', label: 'Texte' },
+                { id: 'media', label: 'Médias' },
+                { id: 'containers', label: 'Blocs & Grilles' },
+                { id: 'forms', label: 'Formulaires' },
+              ].map((f) => (
+                <button
+                  key={f.id}
+                  type="button"
+                  onClick={() => setLayerCategoryFilter(f.id as any)}
+                  className={`px-2 py-0.5 rounded-full whitespace-nowrap transition-all font-medium ${
+                    layerCategoryFilter === f.id
+                      ? 'bg-[#5B5BF0] text-white font-bold'
+                      : 'bg-[#F1F1F6] dark:bg-[#202030] text-[#62627A] dark:text-[#A5A5BC] hover:bg-[#E6E6F0]'
+                  }`}
+                >
+                  {f.label}
+                </button>
+              ))}
+            </div>
+
+            {/* Arborescence Principale & Glisser-Déposer */}
+            <div className="text-[10px] text-[#8E8EA6] dark:text-[#75758E] flex items-center justify-between px-1">
+              <span>💡 Glissez-déposez pour réorganiser/apparenter</span>
+              <span className="font-semibold text-[#5B5BF0]">📥 Apparenter</span>
+            </div>
+
+            <div className="space-y-1 bg-white/50 dark:bg-[#181824]/50 p-1.5 rounded-xl border border-[#E6E6EE] dark:border-[#28283C] min-h-[300px] max-h-[calc(100vh-280px)] overflow-y-auto">
               <LayerTreeItem
                 element={activePage.root}
                 depth={0}
@@ -523,8 +632,79 @@ export function EditorLeftPanel() {
                 onDelete={deleteElement}
                 onRename={renameElement}
                 onMove={moveElementOrder}
+                onDuplicate={duplicateElement}
+                searchQuery={layerSearchQuery}
+                categoryFilter={layerCategoryFilter}
+                forceExpandState={forceExpandState}
+                rootElement={activePage.root}
+                reorderElementInTree={reorderElementInTree}
+                onReparentSelect={(id) => setReparentingElementId(id)}
+                draggedLayerId={draggedLayerId}
+                setDraggedLayerId={setDraggedLayerId}
               />
             </div>
+
+            {/* Modal Selector de changement de parent / Apparentement */}
+            {reparentingElementId && (
+              <div
+                className="fixed inset-0 z-50 bg-black/50 backdrop-blur-xs flex items-center justify-center p-4 animate-in fade-in"
+                onClick={() => setReparentingElementId(null)}
+              >
+                <div
+                  className="bg-white dark:bg-[#181824] border border-[#E6E6EE] dark:border-[#28283C] rounded-2xl p-4 w-full max-w-sm shadow-xl space-y-3"
+                  onClick={(e) => e.stopPropagation()}
+                >
+                  <div className="flex items-center justify-between pb-2 border-b border-[#E6E6EE] dark:border-[#28283C]">
+                    <div className="flex items-center gap-2">
+                      <FolderInput className="w-4 h-4 text-[#5B5BF0]" />
+                      <span className="text-xs font-bold text-[#1B1B2F] dark:text-[#F4F4F9]">
+                        Apparenter cet élément
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setReparentingElementId(null)}
+                      className="text-xs text-[#8E8EA6] hover:text-[#1B1B2F] dark:hover:text-white"
+                    >
+                      ✕
+                    </button>
+                  </div>
+
+                  <p className="text-[11px] text-[#62627A] dark:text-[#A5A5BC]">
+                    Choisissez le nouveau conteneur parent dans lequel placer cet élément :
+                  </p>
+
+                  <div className="space-y-1 max-h-56 overflow-y-auto pr-1">
+                    {getAllContainers(activePage.root, reparentingElementId).map((cont) => (
+                      <button
+                        key={cont.id}
+                        type="button"
+                        onClick={() => {
+                          reorderElementInTree(reparentingElementId, cont.id);
+                          setReparentingElementId(null);
+                        }}
+                        style={{ paddingLeft: `${cont.depth * 12 + 8}px` }}
+                        className="w-full text-left py-2 pr-3 rounded-lg text-xs hover:bg-[#EEF0FE] dark:hover:bg-[#202038] hover:text-[#5B5BF0] border border-transparent hover:border-[#5B5BF0]/30 transition-all flex items-center justify-between group"
+                      >
+                        <div className="flex items-center gap-2 min-w-0">
+                          {getElementTypeIcon(cont.type)}
+                          <span className="font-semibold truncate">{cont.name}</span>
+                        </div>
+                        <span className="text-[10px] font-mono text-[#8E8EA6] group-hover:text-[#5B5BF0]">
+                          Mettre dedans →
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+
+                  <div className="pt-2 flex justify-end">
+                    <Button size="sm" variant="outline" onClick={() => setReparentingElementId(null)}>
+                      Annuler
+                    </Button>
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         )}
 
@@ -894,7 +1074,123 @@ export function EditorLeftPanel() {
   );
 }
 
-// Élément récursif pour l'arborescence des calques avec renommage
+// Helpers pour l'arborescence des calques & l'apparentement
+function countTotalElements(root?: Element): number {
+  if (!root) return 0;
+  let count = 1;
+  if (root.children && root.children.length > 0) {
+    for (const child of root.children) {
+      count += countTotalElements(child);
+    }
+  }
+  return count;
+}
+
+function isDescendant(root: Element, sourceId: string, targetId: string): boolean {
+  if (sourceId === targetId) return true;
+  
+  const findSubtree = (node: Element): Element | null => {
+    if (node.id === sourceId) return node;
+    if (node.children) {
+      for (const child of node.children) {
+        const found = findSubtree(child);
+        if (found) return found;
+      }
+    }
+    return null;
+  };
+
+  const sourceSubtree = findSubtree(root);
+  if (!sourceSubtree) return false;
+
+  const checkContains = (node: Element): boolean => {
+    if (node.id === targetId) return true;
+    if (node.children) {
+      return node.children.some(checkContains);
+    }
+    return false;
+  };
+
+  return checkContains(sourceSubtree);
+}
+
+function getAllContainers(root: Element, excludeId?: string): { id: string; name: string; type: string; depth: number }[] {
+  const result: { id: string; name: string; type: string; depth: number }[] = [];
+
+  const traverse = (node: Element, currentDepth: number) => {
+    if (excludeId && isDescendant(root, excludeId, node.id)) {
+      return;
+    }
+
+    const isContainer = ['box', 'container', 'section', 'columns', 'navbar', 'header', 'footer', 'card'].includes(node.type) || node.id === root.id;
+    if (isContainer) {
+      const label = node.customName || (node.props?.text ? `"${node.props.text.slice(0, 15)}..."` : (node.id === root.id ? 'Canevas Racine (Page)' : `${node.type}`));
+      result.push({ id: node.id, name: label, type: node.type, depth: currentDepth });
+    }
+
+    if (node.children) {
+      for (const child of node.children) {
+        traverse(child, currentDepth + 1);
+      }
+    }
+  };
+
+  traverse(root, 0);
+  return result;
+}
+
+function getElementTypeIcon(type: string) {
+  switch (type) {
+    case 'heading':
+      return <Heading className="w-3.5 h-3.5 text-indigo-500 shrink-0" />;
+    case 'text':
+    case 'paragraph':
+      return <AlignLeft className="w-3.5 h-3.5 text-blue-500 shrink-0" />;
+    case 'image':
+      return <ImageIcon className="w-3.5 h-3.5 text-emerald-500 shrink-0" />;
+    case 'button':
+      return <MousePointerClick className="w-3.5 h-3.5 text-violet-500 shrink-0" />;
+    case 'box':
+    case 'container':
+    case 'section':
+    case 'card':
+    case 'wrapper':
+      return <Box className="w-3.5 h-3.5 text-amber-500 shrink-0" />;
+    case 'navbar':
+    case 'header':
+    case 'footer':
+      return <Globe className="w-3.5 h-3.5 text-cyan-500 shrink-0" />;
+    case 'input':
+    case 'form':
+    case 'textarea':
+    case 'checkbox':
+    case 'select':
+      return <FormInput className="w-3.5 h-3.5 text-pink-500 shrink-0" />;
+    case 'columns':
+    case 'grid':
+      return <Columns3 className="w-3.5 h-3.5 text-teal-500 shrink-0" />;
+    case 'video':
+      return <Video className="w-3.5 h-3.5 text-red-500 shrink-0" />;
+    case 'table':
+      return <TableIcon className="w-3.5 h-3.5 text-orange-500 shrink-0" />;
+    default:
+      return <Tag className="w-3.5 h-3.5 text-slate-400 shrink-0" />;
+  }
+}
+
+function getElementTagBadge(type: string, props?: Record<string, any>) {
+  if (type === 'heading') return (props?.level || 'h2').toUpperCase();
+  if (type === 'text') return 'TXT';
+  if (type === 'image') return 'IMG';
+  if (type === 'button') return 'BTN';
+  if (type === 'box') return 'DIV';
+  if (type === 'columns') return 'GRID';
+  if (type === 'section') return 'SEC';
+  if (type === 'input') return 'INP';
+  return type.slice(0, 3).toUpperCase();
+}
+
+// Élément récursif pour l'arborescence des calques avec renommage, filtres & apparentement
 interface LayerTreeItemProps {
   element: Element;
   depth: number;
@@ -905,6 +1201,15 @@ interface LayerTreeItemProps {
   onDelete: (id: string) => void;
   onRename: (id: string, name: string) => void;
   onMove: (id: string, dir: 'up' | 'down') => void;
+  onDuplicate?: (id: string) => void;
+  searchQuery?: string;
+  categoryFilter?: 'all' | 'text' | 'media' | 'containers' | 'forms';
+  forceExpandState?: boolean | null;
+  rootElement?: Element;
+  reorderElementInTree?: (sourceId: string, targetParentId: string, targetIndex?: number) => void;
+  onReparentSelect?: (id: string) => void;
+  draggedLayerId?: string | null;
+  setDraggedLayerId?: (id: string | null) => void;
 }
 
 function LayerTreeItem({
@@ -917,18 +1222,36 @@ function LayerTreeItem({
   onDelete,
   onRename,
   onMove,
+  onDuplicate,
+  searchQuery = '',
+  categoryFilter = 'all',
+  forceExpandState = null,
+  rootElement,
+  reorderElementInTree,
+  onReparentSelect,
+  draggedLayerId = null,
+  setDraggedLayerId,
 }: LayerTreeItemProps) {
   const [expanded, setExpanded] = React.useState(true);
   const [isEditing, setIsEditing] = React.useState(false);
   const [customName, setCustomName] = React.useState(element.customName || '');
+  const [dropPosition, setDropPosition] = React.useState<'inside' | 'before' | 'after' | null>(null);
+
+  React.useEffect(() => {
+    if (forceExpandState !== null) {
+      setExpanded(forceExpandState);
+    }
+  }, [forceExpandState]);
 
   const isSelected = selectedId === element.id;
   const hasChildren = element.children && element.children.length > 0;
+  const hasBindings = element.bindings && Object.keys(element.bindings).length > 0;
+  const isContainer = ['box', 'container', 'section', 'columns', 'navbar', 'header', 'footer', 'card'].includes(element.type) || depth === 0;
 
   const getLabel = () => {
     if (element.customName) return element.customName;
-    if (element.props?.text) return `"${element.props.text.slice(0, 16)}..."`;
-    if (element.props?.label) return `"${element.props.label.slice(0, 16)}"`;
+    if (element.props?.text) return `"${element.props.text.slice(0, 18)}..."`;
+    if (element.props?.label) return `"${element.props.label.slice(0, 18)}"`;
     return element.type;
   };
 
@@ -937,9 +1260,146 @@ function LayerTreeItem({
     setIsEditing(false);
   };
 
+  // Gestion du Glisser-Déposer pour l'apparentement
+  const handleDragStart = (e: React.DragEvent) => {
+    if (depth === 0) return;
+    e.stopPropagation();
+    e.dataTransfer.setData('text/plain', element.id);
+    e.dataTransfer.effectAllowed = 'move';
+    if (setDraggedLayerId) setDraggedLayerId(element.id);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    if (!draggedLayerId || draggedLayerId === element.id) return;
+    if (rootElement && isDescendant(rootElement, draggedLayerId, element.id)) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    const rect = e.currentTarget.getBoundingClientRect();
+    const offsetY = e.clientY - rect.top;
+
+    if (isContainer && offsetY > rect.height * 0.25 && offsetY < rect.height * 0.75) {
+      setDropPosition('inside');
+    } else if (offsetY <= rect.height * 0.5) {
+      setDropPosition('before');
+    } else {
+      setDropPosition('after');
+    }
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDropPosition(null);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    const sourceId = e.dataTransfer.getData('text/plain') || draggedLayerId;
+    setDropPosition(null);
+    if (setDraggedLayerId) setDraggedLayerId(null);
+
+    if (!sourceId || sourceId === element.id || !reorderElementInTree) return;
+    if (rootElement && isDescendant(rootElement, sourceId, element.id)) return;
+
+    if (dropPosition === 'inside') {
+      reorderElementInTree(sourceId, element.id);
+    } else {
+      const match = rootElement ? findElementInTree(rootElement, element.id) : null;
+      if (match && match.parent) {
+        const targetIndex = dropPosition === 'before' ? match.index : match.index + 1;
+        reorderElementInTree(sourceId, match.parent.id, targetIndex);
+      } else {
+        reorderElementInTree(sourceId, element.id);
+      }
+    }
+  };
+
+  // Action rapide : Désapparenter (outdent vers grand-parent)
+  const handleOutdent = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (!rootElement || !reorderElementInTree || depth <= 1) return;
+    const match = findElementInTree(rootElement, element.id);
+    if (match && match.parent) {
+      const parentMatch = findElementInTree(rootElement, match.parent.id);
+      if (parentMatch && parentMatch.parent) {
+        reorderElementInTree(element.id, parentMatch.parent.id, parentMatch.index + 1);
+      } else if (parentMatch) {
+        reorderElementInTree(element.id, rootElement.id);
+      }
+    }
+  };
+
+  // Logique de filtrage
+  const matchesSearch = React.useMemo(() => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    const nameMatch = element.customName?.toLowerCase().includes(q);
+    const typeMatch = element.type.toLowerCase().includes(q);
+    const textMatch = element.props?.text?.toLowerCase().includes(q);
+    return nameMatch || typeMatch || textMatch;
+  }, [element, searchQuery]);
+
+  const matchesCategory = React.useMemo(() => {
+    if (categoryFilter === 'all') return true;
+    if (categoryFilter === 'text') return ['heading', 'text', 'paragraph'].includes(element.type);
+    if (categoryFilter === 'media') return ['image', 'video', 'icon'].includes(element.type);
+    if (categoryFilter === 'containers') return ['box', 'container', 'section', 'columns', 'navbar', 'card'].includes(element.type);
+    if (categoryFilter === 'forms') return ['input', 'form', 'button', 'textarea', 'checkbox', 'select'].includes(element.type);
+    return true;
+  }, [element.type, categoryFilter]);
+
+  const childMatches = React.useMemo(() => {
+    if (!hasChildren) return false;
+    const checkChild = (item: Element): boolean => {
+      const q = searchQuery.toLowerCase();
+      const nMatch = !searchQuery.trim() || item.customName?.toLowerCase().includes(q) || item.type.toLowerCase().includes(q) || item.props?.text?.toLowerCase().includes(q);
+      const cMatch = categoryFilter === 'all' || 
+        (categoryFilter === 'text' && ['heading', 'text', 'paragraph'].includes(item.type)) ||
+        (categoryFilter === 'media' && ['image', 'video', 'icon'].includes(item.type)) ||
+        (categoryFilter === 'containers' && ['box', 'container', 'section', 'columns', 'navbar'].includes(item.type)) ||
+        (categoryFilter === 'forms' && ['input', 'form', 'button'].includes(item.type));
+      
+      if (nMatch && cMatch) return true;
+      if (item.children) return item.children.some(checkChild);
+      return false;
+    };
+    return element.children.some(checkChild);
+  }, [element.children, searchQuery, categoryFilter, hasChildren]);
+
+  if (!matchesSearch && !matchesCategory && !childMatches) {
+    return null;
+  }
+
+  // Styles de surbrillance lors du survol Drag&Drop
+  let dropClasses = '';
+  if (dropPosition === 'inside') {
+    dropClasses = 'ring-2 ring-[#5B5BF0] bg-[#EEF0FE] dark:bg-[#202040] font-bold';
+  } else if (dropPosition === 'before') {
+    dropClasses = 'border-t-2 border-[#5B5BF0] bg-[#EEF0FE]/50';
+  } else if (dropPosition === 'after') {
+    dropClasses = 'border-b-2 border-[#5B5BF0] bg-[#EEF0FE]/50';
+  }
+
   return (
-    <div className="flex flex-col">
+    <div className="flex flex-col relative">
+      {/* Guideline verticale d'indentation */}
+      {depth > 0 && (
+        <div
+          style={{ left: `${depth * 12 + 2}px` }}
+          className="absolute top-0 bottom-0 w-px bg-[#E6E6EE] dark:bg-[#28283C] pointer-events-none"
+        />
+      )}
+
       <div
+        draggable={depth > 0}
+        onDragStart={handleDragStart}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onDrop={handleDrop}
         onClick={(e) => {
           e.stopPropagation();
           onSelect(element.id);
@@ -948,14 +1408,18 @@ function LayerTreeItem({
           e.stopPropagation();
           setIsEditing(true);
         }}
-        style={{ paddingLeft: `${depth * 14 + 6}px` }}
+        style={{ paddingLeft: `${depth * 12 + 6}px` }}
         className={`group flex items-center justify-between py-1.5 pr-2 rounded-lg text-xs cursor-pointer transition-all ${
           isSelected
-            ? 'bg-[#5B5BF0] text-white font-semibold'
+            ? 'bg-[#5B5BF0] text-white font-semibold shadow-xs'
             : 'text-[#1B1B2F] dark:text-[#F4F4F9] hover:bg-[#F1F1F6] dark:hover:bg-[#222232]'
-        } ${element.hidden ? 'opacity-40 line-through' : ''}`}
+        } ${element.hidden ? 'opacity-40 line-through' : ''} ${dropClasses}`}
       >
         <div className="flex items-center gap-1.5 min-w-0 flex-1">
+          {depth > 0 && (
+            <GripVertical className="w-3 h-3 text-[#8E8EA6] opacity-0 group-hover:opacity-100 cursor-grab active:cursor-grabbing shrink-0" />
+          )}
+
           {hasChildren ? (
             <button
               type="button"
@@ -963,14 +1427,18 @@ function LayerTreeItem({
                 e.stopPropagation();
                 setExpanded(!expanded);
               }}
-              className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+              className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 shrink-0"
             >
               {expanded ? <ChevronDown className="w-3 h-3" /> : <ChevronRight className="w-3 h-3" />}
             </button>
           ) : (
-            <span className="w-3 h-3 inline-block" />
+            <span className="w-3 h-3 inline-block shrink-0" />
           )}
 
+          {/* Icône du type d'élément */}
+          {getElementTypeIcon(element.type)}
+
+          {/* Nom / Édition */}
           {isEditing ? (
             <input
               type="text"
@@ -983,14 +1451,63 @@ function LayerTreeItem({
               }}
               autoFocus
               onClick={(e) => e.stopPropagation()}
-              className="px-1 py-0.2 text-xs bg-white text-[#1B1B2F] rounded outline-none w-28"
+              className="px-1.5 py-0.2 text-xs bg-white text-[#1B1B2F] rounded border border-[#5B5BF0] outline-none w-28"
             />
           ) : (
-            <span className="truncate">{getLabel()}</span>
+            <span className="truncate flex-1">{getLabel()}</span>
           )}
+
+          {/* Badges de Type / Enfants / Liaisons */}
+          <div className="flex items-center gap-1 shrink-0 ml-1">
+            {hasBindings && (
+              <span className="p-0.5 rounded bg-purple-500/10 text-purple-600 dark:text-purple-300" title="Donnée liée (CMS)">
+                <Database className="w-2.5 h-2.5" />
+              </span>
+            )}
+            {hasChildren && (
+              <span className={`text-[9px] px-1 py-0.1 rounded-full font-mono ${
+                isSelected ? 'bg-white/20 text-white' : 'bg-slate-200 dark:bg-slate-800 text-slate-600 dark:text-slate-400'
+              }`}>
+                {element.children.length}
+              </span>
+            )}
+            <span className={`text-[9px] uppercase px-1 py-0.1 rounded font-mono font-bold ${
+              isSelected ? 'bg-white/25 text-white' : 'bg-[#E6E6EE] dark:bg-[#28283C] text-[#8E8EA6]'
+            }`}>
+              {getElementTagBadge(element.type, element.props)}
+            </span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+        {/* Actions sur le calque au survol & Apparentement */}
+        <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity ml-1">
+          {/* Bouton Apparenter à... (Sélecteur de parent) */}
+          {depth > 0 && onReparentSelect && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onReparentSelect(element.id);
+              }}
+              className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-[#5B5BF0] dark:text-[#9A9AFF]"
+              title="Changer le parent (Apparenter à...)"
+            >
+              <FolderInput className="w-3 h-3" />
+            </button>
+          )}
+
+          {/* Bouton Désapparenter (Outdent) */}
+          {depth > 1 && (
+            <button
+              type="button"
+              onClick={handleOutdent}
+              className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10 text-amber-500"
+              title="Sortir du parent (Désapparenter)"
+            >
+              <FolderOutput className="w-3 h-3" />
+            </button>
+          )}
+
           {depth > 0 && (
             <>
               <button
@@ -1000,7 +1517,7 @@ function LayerTreeItem({
                   onMove(element.id, 'up');
                 }}
                 className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-                title="Monter"
+                title="Monter d'un rang"
               >
                 <ArrowUp className="w-3 h-3" />
               </button>
@@ -1011,11 +1528,25 @@ function LayerTreeItem({
                   onMove(element.id, 'down');
                 }}
                 className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-                title="Descendre"
+                title="Descendre d'un rang"
               >
                 <ArrowDown className="w-3 h-3" />
               </button>
             </>
+          )}
+
+          {onDuplicate && depth > 0 && (
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDuplicate(element.id);
+              }}
+              className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
+              title="Dupliquer l'élément"
+            >
+              <Copy className="w-3 h-3" />
+            </button>
           )}
 
           <button
@@ -1027,7 +1558,7 @@ function LayerTreeItem({
             className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
             title={element.locked ? 'Déverrouiller' : 'Verrouiller'}
           >
-            {element.locked ? <Lock className="w-3 h-3 text-amber-500" /> : <Unlock className="w-3 h-3 opacity-60" />}
+            {element.locked ? <Lock className="w-3 h-3 text-amber-400" /> : <Unlock className="w-3 h-3 opacity-60" />}
           </button>
 
           <button
@@ -1037,9 +1568,9 @@ function LayerTreeItem({
               onHide(element.id);
             }}
             className="p-0.5 rounded hover:bg-black/10 dark:hover:bg-white/10"
-            title={element.hidden ? 'Afficher' : 'Masquer'}
+            title={element.hidden ? 'Rendre visible' : 'Masquer'}
           >
-            {element.hidden ? <EyeOff className="w-3 h-3 text-red-500" /> : <Eye className="w-3 h-3 opacity-60" />}
+            {element.hidden ? <EyeOff className="w-3 h-3 text-red-400" /> : <Eye className="w-3 h-3 opacity-60" />}
           </button>
 
           {depth > 0 && (
@@ -1072,6 +1603,15 @@ function LayerTreeItem({
               onDelete={onDelete}
               onRename={onRename}
               onMove={onMove}
+              onDuplicate={onDuplicate}
+              searchQuery={searchQuery}
+              categoryFilter={categoryFilter}
+              forceExpandState={forceExpandState}
+              rootElement={rootElement}
+              reorderElementInTree={reorderElementInTree}
+              onReparentSelect={onReparentSelect}
+              draggedLayerId={draggedLayerId}
+              setDraggedLayerId={setDraggedLayerId}
             />
           ))}
         </div>

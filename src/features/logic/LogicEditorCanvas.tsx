@@ -16,8 +16,25 @@ import {
   Panel,
   useReactFlow,
   ReactFlowProvider,
+  SelectionMode,
 } from '@xyflow/react';
 import '@xyflow/react/dist/style.css';
+import {
+  LayoutGrid,
+  MousePointer2,
+  Hand,
+  Grid3x3,
+  Trash2,
+  Maximize2,
+  ZoomIn,
+  ZoomOut,
+  RotateCcw,
+  Sparkles,
+  Plus,
+  Layers,
+  Activity,
+  Download,
+} from 'lucide-react';
 
 import { useAppStore } from '@/src/core/store';
 import { nodeTypes } from './customNodes';
@@ -32,12 +49,7 @@ import { CodeViewerModal } from '@/src/features/codeViewer';
 import { Node as CoreNode, Edge as CoreEdge } from '@/src/core/types';
 
 function LogicEditorInner() {
-  const {
-    project,
-    activePageId,
-    theme,
-    addToast,
-  } = useAppStore();
+  const { project, activePageId, theme, addToast } = useAppStore();
 
   const reactFlowInstance = useReactFlow();
   const activePage = project.pages.find((p) => p.id === activePageId) || project.pages[0];
@@ -55,6 +67,51 @@ function LogicEditorInner() {
   const [selectedNodeForCode, setSelectedNodeForCode] = React.useState<string | undefined>(undefined);
   const [pendingNodePosition, setPendingNodePosition] = React.useState<{ x: number; y: number }>({ x: 100, y: 100 });
   const [isTesting, setIsTesting] = React.useState(false);
+
+  // Pro Canva States
+  const [isPanMode, setIsPanMode] = React.useState(false);
+  const [snapToGrid, setSnapToGrid] = React.useState(true);
+  const [boundedToCanvas, setBoundedToCanvas] = React.useState(true);
+  const [bgVariant, setBgVariant] = React.useState<BackgroundVariant>(BackgroundVariant.Dots);
+  const [zoomLevel, setZoomLevel] = React.useState<number>(100);
+
+  // Keyboard shortcut listener
+  React.useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Spacebar hold for temporary panning
+      if (e.code === 'Space' && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        setIsPanMode(true);
+      }
+      // Ctrl+D or Cmd+D to duplicate selected nodes
+      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'd') {
+        e.preventDefault();
+        const selected = nodes.filter((n) => n.selected);
+        if (selected.length > 0) {
+          selected.forEach((n) => handleNodeDuplicate(n.id));
+        }
+      }
+      // Delete or Backspace to delete selected nodes
+      if ((e.key === 'Delete' || e.key === 'Backspace') && !['INPUT', 'TEXTAREA', 'SELECT'].includes((e.target as HTMLElement)?.tagName)) {
+        const selected = nodes.filter((n) => n.selected);
+        if (selected.length > 0) {
+          selected.forEach((n) => handleNodeDelete(n.id));
+        }
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === 'Space') {
+        setIsPanMode(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    window.addEventListener('keyup', handleKeyUp);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      window.removeEventListener('keyup', handleKeyUp);
+    };
+  }, [nodes]);
 
   // Synchronisation avec le store lors des modifications
   const syncToStore = React.useCallback(
@@ -173,7 +230,7 @@ function LogicEditorInner() {
     [addToast, syncToStore]
   );
 
-  // Initialisation du graphe à partir de la page active
+  // Initialisation du graphe
   React.useEffect(() => {
     if (!activePage) return;
 
@@ -207,7 +264,6 @@ function LogicEditorInner() {
       setNodes(xyNodes);
       setEdges(xyEdges);
     } else {
-      // Graphe par défaut pour démarrer en toute clarté
       const defaultNodes: XYNode[] = [
         {
           id: 'node-start-1',
@@ -223,11 +279,23 @@ function LogicEditorInner() {
         {
           id: 'node-action-1',
           type: 'action_show_message',
-          position: { x: 400, y: 160 },
+          position: { x: 420, y: 160 },
           data: {
             label: 'Message de bienvenue',
-            messageText: 'Bienvenue sur notre site interactif ! ✨',
+            messageText: 'Bienvenue sur notre application interactive ! ✨',
             messageType: 'success',
+            onChange: handleNodeDataChange,
+            onDelete: handleNodeDelete,
+            onDuplicate: handleNodeDuplicate,
+          },
+        },
+        {
+          id: 'node-js-1',
+          type: 'js_script_custom',
+          position: { x: 420, y: 340 },
+          data: {
+            label: 'Traitement JS',
+            code: '// Script JS exécutable\nreturn "Données traitées: " + (input_a || "OK");',
             onChange: handleNodeDataChange,
             onDelete: handleNodeDelete,
             onDuplicate: handleNodeDuplicate,
@@ -238,8 +306,8 @@ function LogicEditorInner() {
           type: 'comment_sticky',
           position: { x: 80, y: 20 },
           data: {
-            label: 'Note',
-            commentText: '👋 Double-cliquez n’importe où pour ajouter un nouveau bloc, ou cliquez sur « Recettes » pour voir des exemples prêts à l’emploi.',
+            label: 'Note Pro',
+            commentText: '👋 Canevas Pro : Glissez pour déplacer les blocs, double-cliquez pour ajouter un nœud, ou cliquez sur « Organiser le graphe » pour un rangement automatique !',
             colorTheme: 'yellow',
             onChange: handleNodeDataChange,
             onDelete: handleNodeDelete,
@@ -265,7 +333,7 @@ function LogicEditorInner() {
     }
   }, [activePageId]);
 
-  // Validation des connexions entre ports (Fonction pure sans effet de bord)
+  // Validation des connexions
   const isValidConnection = React.useCallback(
     (connection: Connection | XYEdge): boolean => {
       if (!connection.source || !connection.target) return false;
@@ -277,7 +345,6 @@ function LogicEditorInner() {
       const isSourceFlow = sourceHandle.startsWith('flow_') || sourceHandle === 'flow';
       const isTargetFlow = targetHandle.startsWith('flow_') || targetHandle === 'flow';
 
-      // 1. Règle : Le flux d'exécution se connecte uniquement à un flux d'exécution
       if (isSourceFlow && !isTargetFlow) return false;
       if (!isSourceFlow && isTargetFlow) return false;
 
@@ -292,7 +359,7 @@ function LogicEditorInner() {
         addToast({
           type: 'warning',
           title: 'Connexion incompatible',
-          message: 'Reliez les flèches blanches entre elles et les ronds colorés aux ports de données correspondants.',
+          message: 'Reliez les flèches de flux entre elles et les ronds de données aux ports correspondants.',
         });
         return;
       }
@@ -323,7 +390,7 @@ function LogicEditorInner() {
     [isValidConnection, nodes, syncToStore, addToast]
   );
 
-  // Double-clic sur le fond du canvas -> ouvre l'ajout de bloc
+  // Double-clic pour ajouter un bloc
   const onPaneDoubleClick = React.useCallback(
     (event: React.MouseEvent) => {
       const position = reactFlowInstance.screenToFlowPosition({
@@ -336,7 +403,7 @@ function LogicEditorInner() {
     [reactFlowInstance]
   );
 
-  // Ajout effectif d'un nœud sélectionné dans le catalogue
+  // Ajout d'un nœud
   const handleSelectNode = React.useCallback(
     (definition: LogicNodeDefinition) => {
       const newId = `node-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
@@ -369,10 +436,79 @@ function LogicEditorInner() {
     [pendingNodePosition, edges, syncToStore, addToast]
   );
 
-  // Application d'une recette prête à l'emploi
+  // Auto-Layout du Graphe (DAG Layout)
+  const handleAutoLayout = React.useCallback(() => {
+    if (!nodes.length) return;
+
+    const categoryOrder: Record<string, number> = {
+      comment: 0,
+      event: 0,
+      data: 1,
+      logic: 2,
+      action: 3,
+      tool: 4,
+      group: 5,
+    };
+
+    const columns: Record<number, XYNode[]> = {};
+
+    nodes.forEach((n) => {
+      const def = getNodeDefinition(n.type || '');
+      const colIndex = categoryOrder[def?.category || 'action'] ?? 2;
+      if (!columns[colIndex]) columns[colIndex] = [];
+      columns[colIndex].push(n);
+    });
+
+    const columnWidth = 360;
+    const rowHeight = 240;
+    const startX = 80;
+    const startY = 80;
+
+    const newNodes = nodes.map((node) => {
+      const def = getNodeDefinition(node.type || '');
+      const colIndex = categoryOrder[def?.category || 'action'] ?? 2;
+      const colNodes = columns[colIndex] || [node];
+      const itemIndex = colNodes.findIndex((cn) => cn.id === node.id);
+
+      return {
+        ...node,
+        position: {
+          x: startX + colIndex * columnWidth,
+          y: startY + itemIndex * rowHeight,
+        },
+      };
+    });
+
+    setNodes(newNodes);
+    syncToStore(newNodes, edges);
+    setTimeout(() => {
+      reactFlowInstance.fitView({ padding: 0.2, duration: 600 });
+    }, 100);
+
+    addToast({
+      type: 'success',
+      title: 'Graphe réorganisé proprement ✨',
+      duration: 2000,
+    });
+  }, [nodes, edges, syncToStore, reactFlowInstance, addToast]);
+
+  // Vider le canevas
+  const handleClearCanvas = React.useCallback(() => {
+    if (window.confirm('Voulez-vous vraiment effacer tous les blocs du canevas ?')) {
+      setNodes([]);
+      setEdges([]);
+      syncToStore([], []);
+      addToast({
+        type: 'info',
+        title: 'Canevas réinitialisé',
+        duration: 2000,
+      });
+    }
+  }, [syncToStore, addToast]);
+
+  // Application de recette
   const handleApplyRecipe = React.useCallback(
     (recipe: RecipeDefinition) => {
-      // Extraire tous les éléments de la page active
       const extractElements = (el: any): Array<{ id: string; name: string; type: string }> => {
         if (!el) return [];
         let list = [{ id: el.id, name: el.customName || el.props?.text || el.type, type: el.type }];
@@ -423,14 +559,14 @@ function LogicEditorInner() {
       addToast({
         type: 'success',
         title: `Recette appliquée : « ${recipe.name} »`,
-        message: 'Vous pouvez maintenant personnaliser les éléments et paramètres cibles.',
+        message: 'Vous pouvez personnaliser les éléments et paramètres cibles.',
         duration: 4000,
       });
     },
     [activePage, syncToStore, reactFlowInstance, addToast]
   );
 
-  // Simulateur / Test de flux en direct
+  // Test du flux
   const handleRunTest = React.useCallback(() => {
     setIsTesting(true);
     addToast({
@@ -440,7 +576,6 @@ function LogicEditorInner() {
       duration: 3000,
     });
 
-    // Mettre les liens en surbrillance d'animation
     setEdges((eds) =>
       eds.map((e) => ({
         ...e,
@@ -464,14 +599,14 @@ function LogicEditorInner() {
       addToast({
         type: 'success',
         title: 'Simulation terminée avec succès ! ✨',
-        message: 'Tous les blocs ont bien réagi.',
+        message: 'Tous les blocs ont réagi correctement.',
       });
     }, 2500);
   }, [addToast]);
 
   return (
     <div className="flex flex-col flex-1 h-full min-h-0 overflow-hidden bg-[#F7F7FA] dark:bg-[#12121B]">
-      {/* 1. Barre d'outils supérieure de la Logique */}
+      {/* 1. Top Bar */}
       <LogicTopBar
         onOpenAddNode={() => {
           setPendingNodePosition({ x: 250, y: 200 });
@@ -487,7 +622,7 @@ function LogicEditorInner() {
         isTesting={isTesting}
       />
 
-      {/* 2. Zone du Canvas et du Panneau de Diagnostic */}
+      {/* 2. Zone du Canvas */}
       <div className="flex flex-1 min-h-0 overflow-hidden relative">
         <div className="flex-1 h-full w-full relative">
           <ReactFlow
@@ -497,10 +632,17 @@ function LogicEditorInner() {
             onEdgesChange={onEdgesChange}
             onConnect={onConnect}
             isValidConnection={isValidConnection}
-            onPaneClick={() => {}}
             onDoubleClick={onPaneDoubleClick}
             nodeTypes={nodeTypes}
             colorMode={theme === 'dark' ? 'dark' : 'light'}
+            snapToGrid={snapToGrid}
+            snapGrid={[15, 15]}
+            nodeExtent={boundedToCanvas ? [[-50, -50], [3200, 2400]] : undefined}
+            translateExtent={boundedToCanvas ? [[-300, -300], [3500, 2700]] : undefined}
+            panOnScroll={true}
+            panOnDrag={isPanMode ? true : [1, 2]}
+            selectionOnDrag={!isPanMode}
+            selectionMode={SelectionMode.Partial}
             defaultEdgeOptions={{
               type: 'smoothstep',
             }}
@@ -508,33 +650,124 @@ function LogicEditorInner() {
             fitViewOptions={{ padding: 0.2 }}
             className="bg-[#F7F7FA] dark:bg-[#12121B]"
           >
-            {/* Fond à points */}
+            {/* Fond personnalisable (Points / Lignes / Croix) */}
             <Background
-              variant={BackgroundVariant.Dots}
-              gap={20}
-              size={1.5}
+              variant={bgVariant}
+              gap={snapToGrid ? 15 : 20}
+              size={bgVariant === BackgroundVariant.Cross ? 6 : 1.5}
               color={theme === 'dark' ? '#28283C' : '#D1D1DE'}
             />
 
-            {/* Contrôles de zoom & Mini-carte */}
+            {/* Barre de Contrôles Pro Flottante (Haut Gauche) */}
+            <Panel position="top-left" className="m-3 flex items-center gap-1.5 p-1 bg-white/90 dark:bg-[#181824]/90 backdrop-blur-md border border-[#E6E6EE] dark:border-[#28283C] rounded-xl shadow-lg select-none">
+              <button
+                type="button"
+                onClick={() => setIsPanMode(false)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  !isPanMode
+                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                }`}
+                title="Mode Sélection par rectangle"
+              >
+                <MousePointer2 className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Sélection</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setIsPanMode(true)}
+                className={`px-2.5 py-1.5 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all ${
+                  isPanMode
+                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900 shadow-xs'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                }`}
+                title="Mode Pan / Navigation fluide (Espace maintenu)"
+              >
+                <Hand className="w-3.5 h-3.5" />
+                <span className="hidden sm:inline">Déplacement</span>
+              </button>
+
+              <div className="w-px h-4 bg-[#E6E6EE] dark:bg-[#28283C] mx-0.5" />
+
+              <button
+                type="button"
+                onClick={handleAutoLayout}
+                className="px-2.5 py-1.5 rounded-lg text-xs font-semibold text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-800 flex items-center gap-1.5 transition-all"
+                title="Ranger et aligner tous les nœuds automatiquement"
+              >
+                <LayoutGrid className="w-3.5 h-3.5 text-blue-500" />
+                <span className="hidden md:inline">Organiser</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setSnapToGrid(!snapToGrid)}
+                className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
+                  snapToGrid
+                    ? 'text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-950/40'
+                    : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                }`}
+                title={snapToGrid ? 'Grille d’aimantation active (15px)' : 'Grille d’aimantation désactivée'}
+              >
+                <Grid3x3 className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setBoundedToCanvas(!boundedToCanvas)}
+                className={`p-1.5 rounded-lg text-xs font-semibold flex items-center gap-1 transition-all ${
+                  boundedToCanvas
+                    ? 'text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/40'
+                    : 'text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                }`}
+                title={boundedToCanvas ? 'Limites de canevas actives (empêche le dépassement)' : 'Limites de canevas désactivées'}
+              >
+                <Maximize2 className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  if (bgVariant === BackgroundVariant.Dots) setBgVariant(BackgroundVariant.Lines);
+                  else if (bgVariant === BackgroundVariant.Lines) setBgVariant(BackgroundVariant.Cross);
+                  else setBgVariant(BackgroundVariant.Dots);
+                }}
+                className="p-1.5 rounded-lg text-xs font-semibold text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-all"
+                title="Changer le style de la grille de fond (Points / Lignes / Croix)"
+              >
+                <Layers className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={handleClearCanvas}
+                className="p-1.5 rounded-lg text-xs font-semibold text-red-500 hover:bg-red-50 dark:hover:bg-red-950/30 transition-all ml-auto"
+                title="Effacer tout le canevas"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </Panel>
+
+            {/* Zoom Controls & MiniMap Standard */}
             <Controls className="!bg-white dark:!bg-[#181824] !border !border-[#E6E6EE] dark:!border-[#28283C] !rounded-xl !shadow-md" />
             <MiniMap
               className="!bg-white dark:!bg-[#181824] !border !border-[#E6E6EE] dark:!border-[#28283C] !rounded-xl !shadow-md hidden md:block"
               nodeColor={(n) => {
                 const def = getNodeDefinition(n.type || '');
-                if (def?.category === 'event') return '#D97706';
-                if (def?.category === 'action') return '#2563EB';
-                if (def?.category === 'logic') return '#7C3AED';
-                if (def?.category === 'data') return '#059669';
+                if (def?.category === 'event') return '#FF2D20';
+                if (def?.category === 'action') return '#0047FF';
+                if (def?.category === 'logic') return '#059669';
+                if (def?.category === 'data') return '#D97706';
                 return '#475569';
               }}
             />
 
-            {/* Bannière d'aide discrète flottante */}
+            {/* Astuce de Navigation & Raccourcis Pro */}
             <Panel position="bottom-center" className="mb-4 pointer-events-none">
-              <div className="bg-white/90 dark:bg-[#181824]/90 backdrop-blur-md border border-[#E6E6EE] dark:border-[#28283C] px-3.5 py-1.5 rounded-full shadow-lg text-[11px] font-semibold text-[#62627A] dark:text-[#A5A5BC] flex items-center gap-2 pointer-events-auto">
+              <div className="bg-white/90 dark:bg-[#181824]/90 backdrop-blur-md border border-[#E6E6EE] dark:border-[#28283C] px-3.5 py-1.5 rounded-full shadow-lg text-[11px] font-semibold text-[#62627A] dark:text-[#A5A5BC] flex items-center gap-3 pointer-events-auto">
                 <span className="w-2 h-2 rounded-full bg-[#10B981] animate-pulse" />
-                <span>Double-clic sur le fond pour ajouter un bloc • Tirez une flèche blanche pour enchaîner une action</span>
+                <span>Espace + Glisser = Déplacer • Double-clic = Ajouter un nœud • Suppr = Supprimer • Ctrl+D = Dupliquer</span>
               </div>
             </Panel>
           </ReactFlow>
@@ -556,7 +789,7 @@ function LogicEditorInner() {
           )}
         </div>
 
-        {/* Panneau latéral de diagnostic et conseils */}
+        {/* Panneau latéral de diagnostic */}
         {isDiagnosticsOpen && (
           <DiagnosticsPanel
             nodes={nodes as any}
