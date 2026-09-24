@@ -1,0 +1,9 @@
+{
+  "name": "Atelier - Constructeur de Sites & App-Builder No-Code",
+  "description": "Plateforme no-code complète et interactive pour concevoir des sites web modernes avec balises HTML sémantiques, logique visuelle, CMS intégré et export propre.",
+  "request_frame": "FULL_SCREEN",
+  "permissions": [],
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

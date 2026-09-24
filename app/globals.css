@@ -1,0 +1,170 @@
+@import "tailwindcss";
+
+@layer base {
+  :root {
+    --font-sans: 'Plus Jakarta Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    
+    /* Couleurs fondamentales - Studio Moderne */
+    --bg-app: #F8FAFC;
+    --bg-surface: #FFFFFF;
+    --bg-surface-subtle: #F1F5F9;
+    --bg-surface-hover: #E2E8F0;
+    --bg-surface-active: #CBD5E1;
+    
+    --border-app: #E2E8F0;
+    --border-subtle: #F1F5F9;
+    --border-strong: #0F172A;
+    --border-focus: #4F46E5;
+    
+    --text-main: #0F172A;
+    --text-muted: #475569;
+    --text-subtle: #64748B;
+    --text-on-primary: #FFFFFF;
+    
+    /* Couleur Principale & Accent */
+    --primary: #4F46E5;
+    --primary-hover: #4338CA;
+    --primary-active: #3730A3;
+    --primary-light: #EEF2FF;
+    --primary-border: #C7D2FE;
+    
+    --accent: #0D9488;
+    --accent-hover: #0F766E;
+    --accent-light: #F0FDFA;
+    
+    /* Nœuds Logiques */
+    --node-event: #EA580C;
+    --node-event-bg: #FFF7ED;
+    --node-event-border: #FDBA74;
+    
+    --node-action: #2563EB;
+    --node-action-bg: #EFF6FF;
+    --node-action-border: #93C5FD;
+    
+    --node-logic: #7C3AED;
+    --node-logic-bg: #F5F3FF;
+    --node-logic-border: #C4B5FD;
+    
+    --node-data: #059669;
+    --node-data-bg: #ECFDF5;
+    --node-data-border: #6EE7B7;
+    
+    --node-tool: #475569;
+    --node-tool-bg: #F8FAFC;
+    --node-tool-border: #CBD5E1;
+    
+    /* Rayons */
+    --radius-sm: 6px;
+    --radius-md: 10px;
+    --radius-lg: 14px;
+    --radius-xl: 18px;
+    --radius-full: 9999px;
+  }
+
+  .dark {
+    --bg-app: #0B0C10;
+    --bg-surface: #13141B;
+    --bg-surface-subtle: #1C1E27;
+    --bg-surface-hover: #262936;
+    --bg-surface-active: #323545;
+    
+    --border-app: #222533;
+    --border-subtle: #191B26;
+    --border-strong: #43485E;
+    --border-focus: #6366F1;
+    
+    --text-main: #F8FAFC;
+    --text-muted: #94A3B8;
+    --text-subtle: #64748B;
+    --text-on-primary: #0F172A;
+    
+    --primary: #6366F1;
+    --primary-hover: #818CF8;
+    --primary-active: #4F46E5;
+    --primary-light: rgba(99, 102, 241, 0.15);
+    --primary-border: rgba(99, 102, 241, 0.3);
+    
+    --accent: #2DD4BF;
+    --accent-hover: #14B8A6;
+    --accent-light: rgba(45, 212, 191, 0.15);
+    
+    --node-event: #F97316;
+    --node-event-bg: rgba(249, 115, 22, 0.15);
+    --node-event-border: rgba(249, 115, 22, 0.35);
+    
+    --node-action: #3B82F6;
+    --node-action-bg: rgba(59, 130, 246, 0.15);
+    --node-action-border: rgba(59, 130, 246, 0.35);
+    
+    --node-logic: #A855F7;
+    --node-logic-bg: rgba(168, 85, 247, 0.15);
+    --node-logic-border: rgba(168, 85, 247, 0.35);
+    
+    --node-data: #10B981;
+    --node-data-bg: rgba(16, 185, 129, 0.15);
+    --node-data-border: rgba(16, 185, 129, 0.35);
+    
+    --node-tool: #94A3B8;
+    --node-tool-bg: rgba(148, 163, 184, 0.15);
+    --node-tool-border: rgba(148, 163, 184, 0.35);
+  }
+}
+
+body {
+  font-family: var(--font-sans);
+  background-color: var(--bg-app);
+  color: var(--text-main);
+  min-height: 100vh;
+  margin: 0;
+  padding: 0;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Grille de canevas subtile */
+.canvas-grid-bg {
+  background-color: var(--bg-app);
+  background-image: radial-gradient(rgba(100, 116, 139, 0.18) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+.dark .canvas-grid-bg {
+  background-color: var(--bg-app);
+  background-image: radial-gradient(rgba(148, 163, 184, 0.12) 1px, transparent 1px);
+  background-size: 20px 20px;
+}
+
+/* Scrollbar épurée & discrète */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(100, 116, 139, 0.25);
+  border-radius: 9999px;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  background: rgba(148, 163, 184, 0.2);
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(100, 116, 139, 0.45);
+}
+
+/* Chiffres tabulaires pour métriques et dimensions */
+.tabular-nums {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Focus styles accessibles */
+:focus-visible {
+  outline: 2px solid var(--border-focus);
+  outline-offset: 2px;
+}

@@ -1,0 +1,34 @@
+{
+  "name": "atelier-app-builder",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev -p 3000",
+    "build": "next build",
+    "start": "next start -p 3000",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@google/genai": "latest",
+    "@xyflow/react": "^12.12.0",
+    "clsx": "^2.1.1",
+    "immer": "^10.1.1",
+    "jszip": "^3.10.1",
+    "lucide-react": "^1.48.0",
+    "next": "^15.1.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "tailwind-merge": "^3.0.1",
+    "zod": "^3.24.2",
+    "zustand": "^5.0.3"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4.3.3",
+    "@types/node": "^20.17.19",
+    "@types/react": "^19.0.8",
+    "@types/react-dom": "^19.0.3",
+    "postcss": "^8.5.2",
+    "tailwindcss": "^4.0.6",
+    "typescript": "^5.7.3"
+  }
+}
